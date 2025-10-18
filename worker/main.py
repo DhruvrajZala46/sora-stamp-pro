@@ -21,6 +21,7 @@ def process_video():
         upload_path = data.get('upload_path')
         callback_url = data.get('callback_url')
         callback_secret = data.get('callback_secret')
+        logo_url = data.get('logo_url')
         
         if not all([video_id, download_url, upload_url, upload_path, callback_url, callback_secret]):
             return jsonify({'error': 'Missing required fields'}), 400
@@ -42,16 +43,36 @@ def process_video():
         # Create output path
         output_path = input_path.replace('.mp4', '_watermarked.mp4')
         
-        # Add watermark using FFmpeg
-        watermark_text = "Made with Sora AI"
-        ffmpeg_command = [
-            'ffmpeg',
-            '-i', input_path,
-            '-vf', f"drawtext=text='{watermark_text}':fontsize=24:fontcolor=white@0.7:x=10:y=10:box=1:boxcolor=black@0.5:boxborderw=5",
-            '-codec:a', 'copy',
-            '-y',
-            output_path
-        ]
+        # Add watermark using FFmpeg (logo if provided, else text)
+        ffmpeg_command = None
+        logo_path = None
+        if logo_url:
+            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as logo_file:
+                logo_path = logo_file.name
+                logger.info('Downloading logo image...')
+                resp = requests.get(logo_url, stream=True)
+                resp.raise_for_status()
+                for chunk in resp.iter_content(chunk_size=8192):
+                    logo_file.write(chunk)
+            ffmpeg_command = [
+                'ffmpeg',
+                '-i', input_path,
+                '-i', logo_path,
+                '-filter_complex', "[1:v]scale=120:-1[logo];[0:v][logo]overlay=10:10",
+                '-codec:a', 'copy',
+                '-y',
+                output_path
+            ]
+        else:
+            watermark_text = "Made with Sora AI"
+            ffmpeg_command = [
+                'ffmpeg',
+                '-i', input_path,
+                '-vf', f"drawtext=text='{watermark_text}':fontsize=24:fontcolor=white@0.7:x=10:y=10:box=1:boxcolor=black@0.5:boxborderw=5",
+                '-codec:a', 'copy',
+                '-y',
+                output_path
+            ]
         
         logger.info(f'Running FFmpeg...')
         result = subprocess.run(ffmpeg_command, capture_output=True, text=True)

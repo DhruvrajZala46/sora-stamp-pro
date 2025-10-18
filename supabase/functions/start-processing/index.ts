@@ -68,10 +68,11 @@ serve(async (req) => {
       throw new Error('Failed to create signed URL for upload');
     }
 
-    // Get callback URL and shared secret
+    // Get callback URL, shared secret, and optional logo URL
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const WORKER_SHARED_SECRET = Deno.env.get('WORKER_SHARED_SECRET');
     const callbackUrl = `${SUPABASE_URL}/functions/v1/processing-callback`;
+    const WATERMARK_LOGO_URL = Deno.env.get('WATERMARK_LOGO_URL') || null;
 
     // Call Cloud Run worker
     const WORKER_URL = Deno.env.get('WORKER_URL');
@@ -91,7 +92,8 @@ serve(async (req) => {
             upload_url: uploadData.signedUrl,
             upload_path: processedPath,
             callback_url: callbackUrl,
-            callback_secret: WORKER_SHARED_SECRET
+            callback_secret: WORKER_SHARED_SECRET,
+            logo_url: WATERMARK_LOGO_URL || undefined
           })
         });
         if (!resp.ok) {
