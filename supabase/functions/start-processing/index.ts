@@ -79,26 +79,29 @@ serve(async (req) => {
       throw new Error('WORKER_URL not configured');
     }
     
-    const workerResponse = await fetch(`${WORKER_URL}/process-video`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        video_id,
-        download_url: downloadData.signedUrl,
-        upload_url: uploadData.signedUrl,
-        upload_path: processedPath,
-        callback_url: callbackUrl,
-        callback_secret: WORKER_SHARED_SECRET
-      })
-    });
-
-    if (!workerResponse.ok) {
-      const errorText = await workerResponse.text();
-      console.error('Worker error:', errorText);
-      throw new Error(`Worker failed: ${errorText}`);
-    }
+    // Trigger worker asynchronously; don't await completion
+    (async () => {
+      try {
+        const resp = await fetch(`${WORKER_URL}/process-video`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            video_id,
+            download_url: downloadData.signedUrl,
+            upload_url: uploadData.signedUrl,
+            upload_path: processedPath,
+            callback_url: callbackUrl,
+            callback_secret: WORKER_SHARED_SECRET
+          })
+        });
+        if (!resp.ok) {
+          const errorText = await resp.text();
+          console.error('Worker error:', errorText);
+        }
+      } catch (e) {
+        console.error('Failed to trigger worker:', e);
+      }
+    })();
 
     console.log(`Processing started for video ${video_id}`);
 
