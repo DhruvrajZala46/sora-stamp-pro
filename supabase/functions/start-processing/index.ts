@@ -19,6 +19,17 @@ serve(async (req) => {
 
     const { video_id } = await req.json();
 
+    // Get video details
+    const { data: video, error: videoError } = await supabase
+      .from('videos')
+      .select('storage_path')
+      .eq('id', video_id)
+      .single();
+
+    if (videoError || !video) {
+      throw new Error('Video not found');
+    }
+
     // Update video status to processing
     await supabase
       .from('videos')
@@ -28,7 +39,27 @@ serve(async (req) => {
       })
       .eq('id', video_id);
 
-    // Placeholder: In production, this would call your video processing worker
+    // Call Cloud Run worker to process video
+    // REPLACE THIS URL with your actual Cloud Run service URL after deployment
+    const WORKER_URL = Deno.env.get('WORKER_URL') || 'YOUR_CLOUD_RUN_URL_HERE';
+    
+    const workerResponse = await fetch(`${WORKER_URL}/process-video`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        video_id: video_id,
+        storage_path: video.storage_path
+      })
+    });
+
+    if (!workerResponse.ok) {
+      const errorText = await workerResponse.text();
+      console.error('Worker error:', errorText);
+      throw new Error(`Worker failed: ${errorText}`);
+    }
+
     console.log(`Processing started for video ${video_id}`);
 
     return new Response(
