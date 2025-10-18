@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,7 +11,27 @@ interface VideoPlayerProps {
 
 const VideoPlayer = ({ videoId, processedPath }: VideoPlayerProps) => {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Create a signed URL for inline playback as soon as the processed path is available
+  useEffect(() => {
+    let cancelled = false;
+    async function genPlaybackUrl() {
+      try {
+        if (!processedPath) return;
+        const { data, error } = await supabase.storage
+          .from('processed')
+          .createSignedUrl(processedPath, 3600);
+        if (error) throw error;
+        if (!cancelled) setPlaybackUrl(data.signedUrl);
+      } catch (e) {
+        console.error('Failed to create playback URL', e);
+      }
+    }
+    genPlaybackUrl();
+    return () => { cancelled = true; };
+  }, [processedPath]);
 
   const handleDownload = async () => {
     try {
@@ -42,7 +62,7 @@ const VideoPlayer = ({ videoId, processedPath }: VideoPlayerProps) => {
       <h3 className="text-xl font-semibold">Your SoraStamp Video</h3>
       <div className="aspect-video bg-black rounded-lg overflow-hidden">
         <video
-          src={downloadUrl || undefined}
+          src={playbackUrl || undefined}
           controls
           className="w-full h-full object-contain"
         >

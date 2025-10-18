@@ -65,6 +65,39 @@ const Index = () => {
     };
   }, [currentVideoId]);
 
+  // Fallback polling in case realtime events are delayed or disabled
+  useEffect(() => {
+    if (!currentVideoId || videoStatus !== 'processing') return;
+    let cancelled = false;
+    const interval = setInterval(async () => {
+      const { data, error } = await supabase
+        .from('videos')
+        .select('status, processed_path, error_text')
+        .eq('id', currentVideoId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Polling error:', error);
+        return;
+      }
+      if (!data || cancelled) return;
+
+      if (data.status === 'done') {
+        setVideoStatus('done');
+        if (data.processed_path) setProcessedPath(data.processed_path);
+        clearInterval(interval);
+      } else if (data.status === 'error') {
+        setVideoStatus('error');
+        clearInterval(interval);
+      }
+    }, 3000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [currentVideoId, videoStatus]);
+
   const fetchSubscription = async (userId: string) => {
     const { data } = await supabase
       .from('user_subscriptions')
