@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 def process_video():
     """Process video with watermark using signed URLs"""
     video_id = None
+    logo_path = None
     try:
         data = request.get_json()
         video_id = data.get('video_id')
@@ -45,7 +46,6 @@ def process_video():
         
         # Add watermark using FFmpeg (logo if provided, else text)
         ffmpeg_command = None
-        logo_path = None
         if logo_url:
             with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as logo_file:
                 logo_path = logo_file.name
@@ -110,6 +110,11 @@ def process_video():
         # Clean up temp files
         os.unlink(input_path)
         os.unlink(output_path)
+        if logo_path:
+            try:
+                os.unlink(logo_path)
+            except Exception:
+                pass
         
         logger.info(f'Successfully processed video {video_id}')
         return jsonify({
