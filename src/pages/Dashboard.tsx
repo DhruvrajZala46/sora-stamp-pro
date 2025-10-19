@@ -187,12 +187,14 @@ const Dashboard = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+const getStatusBadge = (status: string) => {
     const variants: Record<string, 'default' | 'secondary' | 'destructive'> = {
       uploaded: 'secondary',
       processing: 'default',
       completed: 'default',
-      failed: 'destructive'
+      done: 'default',
+      failed: 'destructive',
+      error: 'destructive',
     };
 
     return (
@@ -247,7 +249,7 @@ const Dashboard = () => {
                   <div key={video.id} className="glass-card rounded-2xl overflow-hidden group hover-scale">
                     {/* Video Thumbnail */}
                     <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-secondary/20">
-                      {video.status === 'completed' && thumbnails[video.id] ? (
+{(['completed','done'].includes(video.status)) && thumbnails[video.id] ? (
                         <video
                           src={thumbnails[video.id]}
                           className="w-full h-full object-cover"
@@ -273,7 +275,7 @@ const Dashboard = () => {
                       </div>
 
                       {/* Bottom Action Bar */}
-                      {video.status === 'completed' && video.processed_path && (
+{(['completed','done'].includes(video.status)) && video.processed_path && (
                         <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/60 to-transparent flex items-center justify-between">
                           <Button
                             size="sm"
