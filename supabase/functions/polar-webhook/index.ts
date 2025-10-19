@@ -27,7 +27,8 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get the raw payload for signature verification
-    const payload = await req.text();
+    const rawBody = new Uint8Array(await req.arrayBuffer());
+    const payload = new TextDecoder('utf-8').decode(rawBody);
     console.log('Webhook received, payload length:', payload.length);
 
     // === ROBUST WEBHOOK SIGNATURE VERIFICATION ===
@@ -42,6 +43,11 @@ serve(async (req) => {
     const timestampHeader = getHeader('webhook-timestamp') || 
                            getHeader('polar-timestamp') || 
                            getHeader('x-polar-timestamp') || '';
+
+    const idHeader = getHeader('webhook-id') ||
+                     getHeader('x-webhook-id') ||
+                     getHeader('polar-id') ||
+                     '';
 
     if (!signatureHeader) {
       console.error('Missing webhook signature header');
@@ -143,12 +149,16 @@ serve(async (req) => {
       ['sign']
     );
 
-    // Create signed messages (both with and without timestamp)
+    // Create signed messages per Standard Webhooks
     const toVerify: string[] = [];
+    if (idHeader && timestamp) {
+      toVerify.push(`${idHeader}.${timestamp}.${payload}`);
+    }
     if (timestamp) {
       toVerify.push(`${timestamp}.${payload}`);
     }
     toVerify.push(payload);
+    console.log('Verification variants:', { variants: toVerify.length, hasId: Boolean(idHeader), hasTs: Boolean(timestamp) });
 
     // Compute HMAC and compare
     const toBase64Url = (buf: ArrayBuffer) => {
