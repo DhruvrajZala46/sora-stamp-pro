@@ -20,46 +20,75 @@ serve(async (req) => {
     // Get the raw payload
     const payload = await req.text();
 
-    // Verify webhook signature (supports hex or base64; with or without timestamp prefix)
-    // Accept multiple possible header names for signature & timestamp
-    const getHeader = (n: string) => req.headers.get(n) || undefined;
-    const signatureHeaders = [
-      getHeader('webhook-signature'),
-      getHeader('polar-signature'),
-      getHeader('x-polar-signature'),
-      getHeader('signature'),
+    // Robust webhook signature verification (Polar: "t=<timestamp>, v1=<signature>")
+    const header = (n: string) => req.headers.get(n) || undefined;
+    const rawSignatureHeaders = [
+      header('webhook-signature'),
+      header('polar-signature'),
+      header('x-polar-signature'),
+      header('signature'),
     ].filter(Boolean) as string[];
 
-    const timestamp = getHeader('webhook-timestamp') || getHeader('polar-timestamp') || getHeader('x-polar-timestamp') || '';
-
-    if (!signatureHeaders.length) {
+    if (!rawSignatureHeaders.length) {
       return new Response(JSON.stringify({ error: 'Missing signature' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const encoder = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(webhookSecret),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign']
-    );
+    // Extract timestamp and v1 signatures from possible formats
+    let ts = header('webhook-timestamp') || header('polar-timestamp') || header('x-polar-timestamp') || '';
+    const headerSigs = new Set<string>();
+    for (const h of rawSignatureHeaders) {
+      const parts = h.split(',').map(s => s.trim());
+      for (const p of parts) {
+        const m = /^([a-z0-9_-]+)=(.+)$/i.exec(p);
+        if (m) {
+          const k = m[1].toLowerCase();
+          const v = m[2];
+          if ((k === 't' || k === 'timestamp') && !ts) { ts = v; continue; }
+          if (k === 'v1' || k === 'sha256' || k === 'sig' || k === 'signature') { headerSigs.add(v); continue; }
+        }
+      }
+      // Also handle legacy "v1,<sig>" or header containing only the signature
+      const legacy = h.replace(/^v1,?\s*/i, '');
+      if (legacy && legacy !== h) headerSigs.add(legacy);
+      if (!h.includes('=') && h) headerSigs.add(h);
+    }
 
-    const macPayload = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
-    const macWithTs = await crypto.subtle.sign('HMAC', key, encoder.encode(`${timestamp}.${payload}`));
+    // Prepare HMAC keys (try base64-decoded secret first, then raw-encoded)
+    const enc = new TextEncoder();
+    const b64ToBytes = (b64: string): Uint8Array | null => {
+      try {
+        const bin = atob(b64);
+        const out = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+        return out;
+      } catch {
+        return null;
+      }
+    };
+    const secretBytes = b64ToBytes(webhookSecret) ?? enc.encode(webhookSecret);
+    const key = await crypto.subtle.importKey('raw', secretBytes.buffer as ArrayBuffer, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
 
     const toHex = (buf: ArrayBuffer) => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
     const toB64 = (buf: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(buf)));
 
-    const candidates = new Set([
-      toHex(macPayload),
-      toHex(macWithTs),
-      toB64(macPayload),
-      toB64(macWithTs),
-    ]);
+    const macPayload = await crypto.subtle.sign('HMAC', key, enc.encode(payload));
+    const candidates = new Set<string>([toHex(macPayload), toB64(macPayload)]);
 
-    const normalizedSigs = new Set(signatureHeaders.map(sig => sig.replace(/^v1,?\s*/i, '')));
-    const valid = Array.from(normalizedSigs).some(sig => candidates.has(sig));
+    if (ts) {
+      const macWithTs = await crypto.subtle.sign('HMAC', key, enc.encode(`${ts}.${payload}`));
+      candidates.add(toHex(macWithTs));
+      candidates.add(toB64(macWithTs));
+    }
+
+    const timingSafeEqual = (a: string, b: string) => {
+      if (a.length !== b.length) return false;
+      let res = 0;
+      for (let i = 0; i < a.length; i++) res |= a.charCodeAt(i) ^ b.charCodeAt(i);
+      return res === 0;
+    };
+
+    const valid = Array.from(headerSigs).some(sig => Array.from(candidates).some(c => timingSafeEqual(sig, c)));
+
     if (!valid) {
       console.error('Invalid webhook signature');
       return new Response(JSON.stringify({ error: 'Invalid signature' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -74,6 +103,7 @@ serve(async (req) => {
     switch (event.type) {
       case 'subscription.created':
       case 'subscription.active':
+      case 'subscription.uncanceled':
         await handleSubscriptionActive(supabase, event.data);
         break;
 
@@ -136,7 +166,7 @@ async function handleSubscriptionActive(supabase: any, subscription: any) {
   // Determine plan and videos based on product ID
   const productId = subscription.product?.id || '';
   let plan = 'free';
-  let videosRemaining = 3;
+  let videosRemaining = 5;
 
   // Pro tier - $9/month
   if (productId === '0dfb8146-7505-4dc9-b7ce-a669919533b2') {
@@ -149,15 +179,17 @@ async function handleSubscriptionActive(supabase: any, subscription: any) {
     videosRemaining = 500;
   }
 
-  // Update user subscription
+  // Upsert user subscription to be robust if row is missing
   const { error } = await supabase
     .from('user_subscriptions')
-    .update({
-      plan,
-      videos_remaining: videosRemaining,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', profile.id);
+    .upsert([
+      {
+        user_id: profile.id,
+        plan,
+        videos_remaining: videosRemaining,
+        updated_at: new Date().toISOString(),
+      }
+    ], { onConflict: 'user_id' });
 
   if (error) {
     console.error('Error updating subscription:', error);
