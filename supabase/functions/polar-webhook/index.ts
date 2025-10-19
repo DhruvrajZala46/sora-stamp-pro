@@ -38,7 +38,7 @@ serve(async (req) => {
       // Build plain headers object (lowercased keys)
       const headersObj: Record<string, string> = {};
       for (const [k, v] of req.headers) headersObj[k.toLowerCase()] = v;
-      event = validateEvent(rawBody, headersObj, webhookSecret);
+      event = validateEvent(payload, headersObj, webhookSecret);
     } catch (err) {
       const msg = (err as Error)?.message || String(err);
       console.error('Invalid webhook signature (SDK):', msg);
