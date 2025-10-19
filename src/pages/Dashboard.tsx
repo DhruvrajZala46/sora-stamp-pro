@@ -4,9 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/Navbar';
 import StarField from '@/components/StarField';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Download, Trash2, Share2, Play } from 'lucide-react';
+import { Download, Trash2, Share2, Play, Clock, Calendar, FileVideo } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
@@ -26,7 +25,7 @@ interface Video {
   duration_seconds: number | null;
 }
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 9;
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -37,6 +36,7 @@ const Dashboard = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [deleteVideo, setDeleteVideo] = useState<Video | null>(null);
+  const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -47,6 +47,22 @@ const Dashboard = () => {
       }
     });
   }, [navigate]);
+
+  const generateThumbnail = async (video: Video): Promise<string> => {
+    if (!video.processed_path) return '';
+
+    try {
+      const { data, error } = await supabase.storage
+        .from('processed')
+        .createSignedUrl(video.processed_path, 3600);
+
+      if (error) throw error;
+      return data.signedUrl;
+    } catch (error) {
+      console.error('Failed to generate thumbnail:', error);
+      return '';
+    }
+  };
 
   const fetchVideos = async (page: number) => {
     setLoading(true);
@@ -65,6 +81,15 @@ const Dashboard = () => {
     } else {
       setVideos(data || []);
       setTotalCount(count || 0);
+      
+      // Generate thumbnails
+      const thumbs: Record<string, string> = {};
+      for (const video of data || []) {
+        if (video.processed_path) {
+          thumbs[video.id] = await generateThumbnail(video);
+        }
+      }
+      setThumbnails(thumbs);
     }
     setLoading(false);
   };
@@ -150,7 +175,7 @@ const Dashboard = () => {
     try {
       const { data, error } = await supabase.storage
         .from('processed')
-        .createSignedUrl(video.processed_path, 604800); // 7 days
+        .createSignedUrl(video.processed_path, 604800);
 
       if (error) throw error;
 
@@ -171,7 +196,7 @@ const Dashboard = () => {
     };
 
     return (
-      <Badge variant={variants[status] || 'secondary'}>
+      <Badge variant={variants[status] || 'secondary'} className="capitalize">
         {status}
       </Badge>
     );
@@ -186,18 +211,30 @@ const Dashboard = () => {
       <div className="relative z-10 min-h-screen px-6 pt-24 pb-12">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
-            <h1 className="text-4xl font-bold">My Videos</h1>
+            <div>
+              <h1 className="text-4xl font-bold mb-2">My Videos</h1>
+              <p className="text-muted-foreground">
+                {totalCount} {totalCount === 1 ? 'video' : 'videos'} total
+              </p>
+            </div>
             <Button onClick={() => navigate('/')} className="btn-hero">
               Upload New Video
             </Button>
           </div>
 
           {loading ? (
-            <div className="glass-card rounded-2xl p-12 text-center">
-              <p className="text-muted-foreground">Loading videos...</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="glass-card rounded-2xl p-4 animate-pulse">
+                  <div className="aspect-video bg-muted rounded-lg mb-4" />
+                  <div className="h-4 bg-muted rounded mb-2" />
+                  <div className="h-3 bg-muted rounded w-2/3" />
+                </div>
+              ))}
             </div>
           ) : videos.length === 0 ? (
             <div className="glass-card rounded-2xl p-12 text-center">
+              <FileVideo className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
               <p className="text-muted-foreground mb-6">No videos yet</p>
               <Button onClick={() => navigate('/')} className="btn-hero">
                 Upload Your First Video
@@ -205,78 +242,121 @@ const Dashboard = () => {
             </div>
           ) : (
             <>
-              <div className="glass-card rounded-2xl overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Filename</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Uploaded</TableHead>
-                      <TableHead>Completed</TableHead>
-                      <TableHead>Size</TableHead>
-                      <TableHead>Duration</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {videos.map((video) => (
-                      <TableRow key={video.id}>
-                        <TableCell className="font-medium">{video.filename}</TableCell>
-                        <TableCell>{getStatusBadge(video.status)}</TableCell>
-                        <TableCell>{format(new Date(video.created_at), 'MMM d, yyyy HH:mm')}</TableCell>
-                        <TableCell>
-                          {video.processing_finished_at
-                            ? format(new Date(video.processing_finished_at), 'MMM d, yyyy HH:mm')
-                            : '-'}
-                        </TableCell>
-                        <TableCell>
-                          {video.size_bytes ? `${(video.size_bytes / 1024 / 1024).toFixed(2)} MB` : '-'}
-                        </TableCell>
-                        <TableCell>
-                          {video.duration_seconds ? `${Math.floor(video.duration_seconds / 60)}:${String(Math.floor(video.duration_seconds % 60)).padStart(2, '0')}` : '-'}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {video.status === 'completed' && video.processed_path && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => setSelectedVideo(video)}
-                                >
-                                  <Play className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleDownload(video)}
-                                >
-                                  <Download className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleShare(video)}
-                                >
-                                  <Share2 className="w-4 h-4" />
-                                </Button>
-                              </>
-                            )}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setDeleteVideo(video)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {videos.map((video) => (
+                  <div key={video.id} className="glass-card rounded-2xl overflow-hidden group hover-scale">
+                    {/* Video Thumbnail */}
+                    <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-secondary/20">
+                      {video.status === 'completed' && thumbnails[video.id] ? (
+                        <video
+                          src={thumbnails[video.id]}
+                          className="w-full h-full object-cover"
+                          muted
+                          playsInline
+                          onMouseEnter={(e) => e.currentTarget.play()}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.pause();
+                            e.currentTarget.currentTime = 0;
+                          }}
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-full">
+                          <FileVideo className="w-16 h-16 text-muted-foreground" />
+                        </div>
+                      )}
+                      
+                      {/* Status Badge Overlay */}
+                      <div className="absolute top-3 right-3">
+                        {getStatusBadge(video.status)}
+                      </div>
+
+                      {/* Play Overlay */}
+                      {video.status === 'completed' && video.processed_path && (
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Button
+                            size="lg"
+                            className="rounded-full"
+                            onClick={() => setSelectedVideo(video)}
+                          >
+                            <Play className="w-6 h-6" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Video Info */}
+                    <div className="p-4">
+                      <h3 className="font-semibold text-lg mb-2 truncate" title={video.filename}>
+                        {video.filename}
+                      </h3>
+                      
+                      <div className="space-y-2 text-sm text-muted-foreground mb-4">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4" />
+                          <span>{format(new Date(video.created_at), 'MMM d, yyyy HH:mm')}</span>
+                        </div>
+                        
+                        {video.duration_seconds && (
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4" />
+                            <span>
+                              {Math.floor(video.duration_seconds / 60)}:
+                              {String(Math.floor(video.duration_seconds % 60)).padStart(2, '0')}
+                            </span>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                        )}
+
+                        {video.size_bytes && (
+                          <div className="flex items-center gap-2">
+                            <FileVideo className="w-4 h-4" />
+                            <span>{(video.size_bytes / 1024 / 1024).toFixed(2)} MB</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Error Message */}
+                      {video.status === 'failed' && video.error_text && (
+                        <div className="mb-4 p-2 bg-destructive/10 rounded text-xs text-destructive">
+                          {video.error_text}
+                        </div>
+                      )}
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-2">
+                        {video.status === 'completed' && video.processed_path && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => handleDownload(video)}
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              Download
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleShare(video)}
+                            >
+                              <Share2 className="w-4 h-4" />
+                            </Button>
+                          </>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setDeleteVideo(video)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
 
+              {/* Pagination */}
               {totalPages > 1 && (
                 <div className="mt-8">
                   <Pagination>
@@ -313,6 +393,7 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Video Player Dialog */}
       <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
@@ -324,6 +405,7 @@ const Dashboard = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteVideo} onOpenChange={() => setDeleteVideo(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
