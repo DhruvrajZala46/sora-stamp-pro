@@ -38,7 +38,7 @@ const pricingPlans = [
     ],
     videoLimit: 100,
     highlighted: false,
-    checkoutLink: "https://polar.sh/checkout/0dfb8146-7505-4dc9-b7ce-a669919533b2",
+    productId: "0dfb8146-7505-4dc9-b7ce-a669919533b2",
   },
   {
     name: "Unlimited",
@@ -57,7 +57,7 @@ const pricingPlans = [
     ],
     videoLimit: 500,
     highlighted: true,
-    checkoutLink: "https://polar.sh/checkout/240aaa37-f58b-4f9c-93ae-e0df52f0644c",
+    productId: "240aaa37-f58b-4f9c-93ae-e0df52f0644c",
   },
 ];
 
@@ -101,13 +101,24 @@ export default function Pricing() {
       return;
     }
 
-    if (!plan.checkoutLink) {
+    if (!('productId' in plan) || !plan.productId) {
       toast.info("You're already on the free plan");
       return;
     }
 
-    // Redirect to Polar checkout
-    window.location.href = plan.checkoutLink;
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.functions.invoke('create-polar-checkout', {
+        body: { productId: plan.productId },
+      });
+      if (error || !data?.url) throw error || new Error('No checkout URL');
+      window.location.href = data.url;
+    } catch (err: any) {
+      console.error('Checkout error:', err);
+      toast.error("Failed to start checkout. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -173,9 +184,7 @@ export default function Pricing() {
               >
                 {currentPlan === plan.name.toLowerCase()
                   ? 'Current Plan'
-                  : plan.checkoutLink
-                  ? 'Upgrade Now'
-                  : 'Get Started'}
+                  : 'Upgrade Now'}
               </Button>
             </Card>
           ))}

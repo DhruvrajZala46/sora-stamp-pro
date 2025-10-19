@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -18,51 +17,30 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get the raw payload
+    // Get raw body for signature verification
     const payload = await req.text();
-    
-    // Verify webhook signature
-    const signature = req.headers.get('webhook-signature');
-    if (!signature) {
-      console.error('Missing webhook signature');
-      return new Response(
-        JSON.stringify({ error: 'Missing signature' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+
+    // Validate using Polar SDK (Standard Webhooks)
+    let event: any;
+    try {
+      event = validateEvent(
+        payload,
+        {
+          'webhook-id': req.headers.get('webhook-id') ?? '',
+          'webhook-signature': req.headers.get('webhook-signature') ?? '',
+          'webhook-timestamp': req.headers.get('webhook-timestamp') ?? '',
+        },
+        webhookSecret,
       );
-    }
-
-    // Verify the signature using HMAC
-    const encoder = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(webhookSecret),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['verify']
-    );
-
-    const signatureBuffer = Uint8Array.from(
-      signature.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16))
-    );
-
-    const dataBuffer = encoder.encode(payload);
-    const isValid = await crypto.subtle.verify(
-      'HMAC',
-      key,
-      signatureBuffer,
-      dataBuffer
-    );
-
-    if (!isValid) {
-      console.error('Invalid webhook signature');
-      return new Response(
-        JSON.stringify({ error: 'Invalid signature' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    } catch (err) {
+      if (err instanceof WebhookVerificationError) {
+        console.error('Invalid webhook signature');
+        return new Response(JSON.stringify({ error: 'Invalid signature' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      throw err;
     }
     
-    // Parse the webhook event
-    const event = JSON.parse(payload);
+    console.log('Polar webhook received:', event.type);
     
     console.log('Polar webhook received:', event.type);
 
