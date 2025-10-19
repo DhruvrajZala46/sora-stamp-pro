@@ -21,10 +21,18 @@ serve(async (req) => {
     const payload = await req.text();
 
     // Verify webhook signature (supports hex or base64; with or without timestamp prefix)
-    const signature = req.headers.get('webhook-signature') || '';
-    const timestamp = req.headers.get('webhook-timestamp') || '';
+    // Accept multiple possible header names for signature & timestamp
+    const getHeader = (n: string) => req.headers.get(n) || undefined;
+    const signatureHeaders = [
+      getHeader('webhook-signature'),
+      getHeader('polar-signature'),
+      getHeader('x-polar-signature'),
+      getHeader('signature'),
+    ].filter(Boolean) as string[];
 
-    if (!signature) {
+    const timestamp = getHeader('webhook-timestamp') || getHeader('polar-timestamp') || getHeader('x-polar-timestamp') || '';
+
+    if (!signatureHeaders.length) {
       return new Response(JSON.stringify({ error: 'Missing signature' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -50,8 +58,9 @@ serve(async (req) => {
       toB64(macWithTs),
     ]);
 
-    const normalizedSig = signature.replace(/^v1,?\s*/i, '');
-    if (!candidates.has(normalizedSig)) {
+    const normalizedSigs = new Set(signatureHeaders.map(sig => sig.replace(/^v1,?\s*/i, '')));
+    const valid = Array.from(normalizedSigs).some(sig => candidates.has(sig));
+    if (!valid) {
       console.error('Invalid webhook signature');
       return new Response(JSON.stringify({ error: 'Invalid signature' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }

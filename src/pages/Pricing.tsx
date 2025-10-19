@@ -69,6 +69,27 @@ export default function Pricing() {
 
   useEffect(() => {
     checkAuth();
+
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get('status');
+    const checkoutId = params.get('checkout_id');
+
+    if (status === 'success' && checkoutId) {
+      toast.success("Payment successful! Activating your subscription...");
+      supabase.functions.invoke('sync-subscription').finally(() => {
+        checkAuth();
+      });
+    } else if (status === 'cancelled') {
+      toast.info("Checkout canceled.");
+    }
+
+    if (status) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('status');
+      url.searchParams.delete('checkout_id');
+      url.searchParams.delete('customer_session_token');
+      window.history.replaceState({}, '', url.pathname);
+    }
   }, []);
 
   const checkAuth = async () => {
@@ -112,7 +133,7 @@ export default function Pricing() {
     try {
       setLoading(true);
       const { data, error } = await supabase.functions.invoke('create-polar-checkout', {
-        body: { productId: plan.productId },
+        body: { productId: plan.productId, redirectOrigin: window.location.origin },
       });
       if (error || !data?.url) throw error || new Error('No checkout URL');
       window.location.href = data.url;

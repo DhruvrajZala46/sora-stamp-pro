@@ -43,8 +43,27 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Invalid productId' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    // Derive the app origin from client or headers to avoid using the functions domain
     const url = new URL(req.url);
-    const origin = `${url.protocol}//${url.host}`;
+    const redirectOrigin = typeof (body?.redirectOrigin) === 'string' ? body.redirectOrigin : undefined;
+    const headerOrigin = req.headers.get('origin') || undefined;
+    const headerReferer = req.headers.get('referer') || undefined;
+
+    const getOrigin = (val?: string) => {
+      try {
+        if (!val) return undefined;
+        const u = new URL(val);
+        return `${u.protocol}//${u.host}`;
+      } catch (_) {
+        return undefined;
+      }
+    };
+
+    let appOrigin = getOrigin(redirectOrigin) || getOrigin(headerOrigin) || getOrigin(headerReferer);
+    if (!appOrigin) {
+      const envSite = Deno.env.get('SITE_URL') || Deno.env.get('PUBLIC_SITE_URL');
+      appOrigin = getOrigin(envSite) || `${url.protocol}//${url.host}`; // last resort
+    }
 
     const base = (server === 'production') 
       ? 'https://api.polar.sh/v1'
@@ -52,7 +71,8 @@ serve(async (req) => {
 
     const bodyPayload: Record<string, unknown> = {
       products: [productId],
-      success_url: `${origin}/pricing?status=success&checkout_id={CHECKOUT_ID}`,
+      success_url: `${appOrigin}/pricing?status=success&checkout_id={CHECKOUT_ID}`,
+      cancel_url: `${appOrigin}/pricing?status=cancelled`,
     };
     if (user?.id) bodyPayload["external_customer_id"] = user.id;
     if (user?.email) bodyPayload["customer_email"] = user.email;
