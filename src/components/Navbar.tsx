@@ -37,7 +37,7 @@ const Navbar = ({ user, plan = 'free', onLogout }: NavbarProps) => {
               >
                 My Videos
               </Button>
-              <Avatar className="cursor-pointer" onClick={onLogout}>
+              <Avatar className="cursor-pointer" onClick={() => navigate('/profile')}>
                 <AvatarFallback className="bg-primary/20 text-primary">
                   {user.email?.charAt(0).toUpperCase()}
                 </AvatarFallback>
