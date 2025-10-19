@@ -28,8 +28,15 @@ const Navbar = ({ user, plan = 'free', onLogout }: NavbarProps) => {
           {user ? (
             <>
               <Badge variant="secondary" className="px-4 py-1.5 text-sm font-medium">
-                {plan === 'pro' ? '✨ Pro' : '🆓 Free'}
+                {plan === 'unlimited' ? '🚀 Unlimited' : plan === 'pro' ? '✨ Pro' : '🆓 Free'}
               </Badge>
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate('/pricing')}
+                className="text-foreground/80 hover:text-foreground"
+              >
+                Upgrade
+              </Button>
               <Button 
                 variant="ghost" 
                 onClick={() => navigate('/dashboard')}
@@ -44,12 +51,21 @@ const Navbar = ({ user, plan = 'free', onLogout }: NavbarProps) => {
               </Avatar>
             </>
           ) : (
-            <Button 
-              onClick={() => navigate('/auth')}
-              className="btn-hero"
-            >
-              Login
-            </Button>
+            <>
+              <Button 
+                variant="ghost"
+                onClick={() => navigate('/pricing')}
+                className="text-foreground/80 hover:text-foreground"
+              >
+                Pricing
+              </Button>
+              <Button 
+                onClick={() => navigate('/auth')}
+                className="btn-hero"
+              >
+                Login
+              </Button>
+            </>
           )}
         </div>
       </div>
