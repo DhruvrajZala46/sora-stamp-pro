@@ -118,13 +118,18 @@ serve(async (req) => {
 
     // Compute HMAC and compare
     const toBase64 = (buf: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+    const toHex = (buf: ArrayBuffer) => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
     
     let isValid = false;
     for (const msg of toVerify) {
       const computed = await crypto.subtle.sign('HMAC', key, enc.encode(msg));
       const computedBase64 = toBase64(computed);
+      const computedHex = toHex(computed);
       
-      if (constantTimeEqual(signature, computedBase64)) {
+      if (
+        (signature.length === computedBase64.length && constantTimeEqual(signature, computedBase64)) ||
+        (signature.length === computedHex.length && constantTimeEqual(signature, computedHex))
+      ) {
         isValid = true;
         console.log('Webhook signature verified successfully');
         break;
