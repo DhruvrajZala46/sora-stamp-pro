@@ -2,3 +2,6 @@ project_id = "opeadmwkryojfkxhnrix"
 
 [functions.processing-callback]
 verify_jwt = false
+
+[functions.polar-webhook]
+verify_jwt = false
