@@ -77,11 +77,14 @@ export default function Pricing() {
       setUser(user);
 
       if (user) {
+        // Normalize free tier to 5 videos on the backend
+        await supabase.functions.invoke('sync-subscription');
+
         const { data: subscription } = await supabase
           .from('user_subscriptions')
           .select('plan')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (subscription) {
           setCurrentPlan(subscription.plan);
@@ -94,7 +97,7 @@ export default function Pricing() {
     }
   };
 
-  const handleUpgrade = async (plan: typeof pricingPlans[0]) => {
+  const handleUpgrade = async (plan: any) => {
     if (!user) {
       toast.error("Please sign in to upgrade");
       navigate('/auth');

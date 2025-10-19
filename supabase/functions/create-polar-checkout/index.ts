@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Polar } from "npm:@polar-sh/sdk";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -47,17 +46,33 @@ serve(async (req) => {
     const url = new URL(req.url);
     const origin = `${url.protocol}//${url.host}`;
 
-    const polar = new Polar({ accessToken, server: server as any });
+    const base = (server === 'production') 
+      ? 'https://api.polar.sh/v1'
+      : 'https://sandbox-api.polar.sh/v1';
 
-    const checkout = await polar.checkouts.create({
+    const bodyPayload: Record<string, unknown> = {
       products: [productId],
-      successUrl: `${origin}/pricing?status=success&checkout_id={CHECKOUT_ID}`,
-      // Attach metadata to reconcile in webhooks
-      metadata: {
-        external_user_id: user?.id ?? null,
+      success_url: `${origin}/pricing?status=success&checkout_id={CHECKOUT_ID}`,
+    };
+    if (user?.id) bodyPayload["external_customer_id"] = user.id;
+    if (user?.email) bodyPayload["customer_email"] = user.email;
+
+    const resp = await fetch(`${base}/checkouts/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
       },
-      customerEmail: user?.email ?? undefined,
-    } as any);
+      body: JSON.stringify(bodyPayload),
+    });
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      console.error('Polar API error:', resp.status, errText);
+      return new Response(JSON.stringify({ error: 'Failed to create checkout session' }), { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const checkout = await resp.json();
 
     return new Response(JSON.stringify({ url: checkout.url, id: checkout.id }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (e: any) {

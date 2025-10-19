@@ -17,31 +17,48 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get raw body for signature verification
+    // Get the raw payload
     const payload = await req.text();
 
-    // Validate using Polar SDK (Standard Webhooks)
-    let event: any;
-    try {
-      event = validateEvent(
-        payload,
-        {
-          'webhook-id': req.headers.get('webhook-id') ?? '',
-          'webhook-signature': req.headers.get('webhook-signature') ?? '',
-          'webhook-timestamp': req.headers.get('webhook-timestamp') ?? '',
-        },
-        webhookSecret,
-      );
-    } catch (err) {
-      if (err instanceof WebhookVerificationError) {
-        console.error('Invalid webhook signature');
-        return new Response(JSON.stringify({ error: 'Invalid signature' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-      throw err;
+    // Verify webhook signature (supports hex or base64; with or without timestamp prefix)
+    const signature = req.headers.get('webhook-signature') || '';
+    const timestamp = req.headers.get('webhook-timestamp') || '';
+
+    if (!signature) {
+      return new Response(JSON.stringify({ error: 'Missing signature' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-    
-    console.log('Polar webhook received:', event.type);
-    
+
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(webhookSecret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+
+    const macPayload = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
+    const macWithTs = await crypto.subtle.sign('HMAC', key, encoder.encode(`${timestamp}.${payload}`));
+
+    const toHex = (buf: ArrayBuffer) => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    const toB64 = (buf: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+
+    const candidates = new Set([
+      toHex(macPayload),
+      toHex(macWithTs),
+      toB64(macPayload),
+      toB64(macWithTs),
+    ]);
+
+    const normalizedSig = signature.replace(/^v1,?\s*/i, '');
+    if (!candidates.has(normalizedSig)) {
+      console.error('Invalid webhook signature');
+      return new Response(JSON.stringify({ error: 'Invalid signature' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Parse the webhook event
+    const event = JSON.parse(payload);
+
     console.log('Polar webhook received:', event.type);
 
     // Handle different event types
@@ -170,7 +187,7 @@ async function handleSubscriptionCanceled(supabase: any, subscription: any) {
     .from('user_subscriptions')
     .update({
       plan: 'free',
-      videos_remaining: 3,
+      videos_remaining: 5,
       updated_at: new Date().toISOString(),
     })
     .eq('user_id', profile.id);
