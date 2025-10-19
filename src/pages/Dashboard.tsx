@@ -251,12 +251,14 @@ const Dashboard = () => {
                         <video
                           src={thumbnails[video.id]}
                           className="w-full h-full object-cover"
+                          autoPlay
                           muted
+                          loop
                           playsInline
-                          onMouseEnter={(e) => e.currentTarget.play()}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.pause();
-                            e.currentTarget.currentTime = 0;
+                          preload="metadata"
+                          onClick={() => setSelectedVideo(video)}
+                          onCanPlay={(e) => {
+                            try { e.currentTarget.play(); } catch {}
                           }}
                         />
                       ) : (
@@ -270,16 +272,35 @@ const Dashboard = () => {
                         {getStatusBadge(video.status)}
                       </div>
 
-                      {/* Play Overlay */}
+                      {/* Bottom Action Bar */}
                       {video.status === 'completed' && video.processed_path && (
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/60 to-transparent flex items-center justify-between">
                           <Button
-                            size="lg"
-                            className="rounded-full"
+                            size="sm"
+                            variant="secondary"
                             onClick={() => setSelectedVideo(video)}
                           >
-                            <Play className="w-6 h-6" />
+                            <Play className="w-4 h-4 mr-2" />
+                            Play
                           </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              size="icon"
+                              variant="secondary"
+                              onClick={() => handleDownload(video)}
+                              aria-label="Download video"
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="secondary"
+                              onClick={() => handleShare(video)}
+                              aria-label="Share video"
+                            >
+                              <Share2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -323,26 +344,6 @@ const Dashboard = () => {
 
                       {/* Action Buttons */}
                       <div className="flex gap-2">
-                        {video.status === 'completed' && video.processed_path && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex-1"
-                              onClick={() => handleDownload(video)}
-                            >
-                              <Download className="w-4 h-4 mr-2" />
-                              Download
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleShare(video)}
-                            >
-                              <Share2 className="w-4 h-4" />
-                            </Button>
-                          </>
-                        )}
                         <Button
                           variant="outline"
                           size="sm"
