@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { validateEvent } from "https://esm.sh/@polar-sh/sdk@latest/webhooks";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,175 +32,24 @@ serve(async (req) => {
     const payload = new TextDecoder('utf-8').decode(rawBody);
     console.log('Webhook received, payload length:', payload.length);
 
-    // === ROBUST WEBHOOK SIGNATURE VERIFICATION ===
-    const getHeader = (name: string) => req.headers.get(name) || undefined;
-    
-    // Try multiple common header names
-    const signatureHeader = getHeader('webhook-signature') || 
-                           getHeader('polar-signature') || 
-                           getHeader('x-polar-signature') || 
-                           getHeader('signature') || '';
-    
-    const timestampHeader = getHeader('webhook-timestamp') || 
-                           getHeader('polar-timestamp') || 
-                           getHeader('x-polar-timestamp') || '';
-
-    const idHeader = getHeader('webhook-id') ||
-                     getHeader('x-webhook-id') ||
-                     getHeader('polar-id') ||
-                     '';
-
-    if (!signatureHeader) {
-      console.error('Missing webhook signature header');
-      return new Response(JSON.stringify({ error: 'Missing signature' }), { 
-        status: 401, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      });
-    }
-
-    // Parse signature header per Standard Webhooks: "t=<timestamp>,v1=<sig>[,v1=<sig>...]"
-    let timestamp: string | undefined = timestampHeader || undefined;
-    const signatures: string[] = [];
-    const rawSigHeader = signatureHeader;
-
-    const parts = rawSigHeader.split(',').map((p) => p.trim()).filter(Boolean);
-    for (const part of parts) {
-      if (part.startsWith('t=')) {
-        timestamp = timestamp ?? part.substring(2);
-      } else if (part.startsWith('v1=')) {
-        signatures.push(part.substring(3));
-      } else if (part.startsWith('sha256=')) {
-        // Some providers use sha256=<base64|base64url>
-        signatures.push(part.substring(7));
-      } else if (!part.includes('=')) {
-        // bare signature value
-        signatures.push(part);
-      }
-    }
-
-    if (signatures.length === 0) {
-      console.error('Could not extract signature(s) from header:', signatureHeader);
-      return new Response(JSON.stringify({ error: 'Invalid signature format' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Optional timestamp tolerance (5 minutes). Warn if out of range.
-    if (timestamp) {
-      const tsNum = Number(timestamp);
-      if (Number.isFinite(tsNum)) {
-        const nowSec = Math.floor(Date.now() / 1000);
-        const skew = Math.abs(nowSec - tsNum);
-        if (skew > 300) {
-          console.warn('Webhook timestamp outside tolerance window, skew(s)=', skew);
-        }
-      } else {
-        console.warn('Non-numeric webhook timestamp header');
-      }
-    }
-
-    // Prepare the secret key (handle base64url/standard base64 and raw secrets)
-    const enc = new TextEncoder();
-
-    const base64UrlToBytes = (b64url: string): Uint8Array => {
-      const b64 = b64url.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(b64url.length / 4) * 4, '=');
-      const binary = atob(b64);
-      const arr = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i);
-      return arr;
-    };
-    
-    let keyBytes: Uint8Array;
+    // === POLAR SIGNATURE VALIDATION ===
+    let event: any;
     try {
-      if (webhookSecret.startsWith('whsec_')) {
-        const raw = webhookSecret.slice(6);
-        keyBytes = base64UrlToBytes(raw);
-        console.log('Using base64url-decoded webhook secret');
-      } else {
-        // Try base64url or base64 without prefix; fallback to raw
-        try {
-          keyBytes = base64UrlToBytes(webhookSecret);
-          console.log('Using base64url-decoded webhook secret (no prefix)');
-        } catch {
-          try {
-            const bin = atob(webhookSecret);
-            const arr = new Uint8Array(bin.length);
-            for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-            keyBytes = arr;
-            console.log('Using base64-decoded webhook secret (no prefix)');
-          } catch {
-            keyBytes = enc.encode(webhookSecret);
-            console.log('Using raw webhook secret');
-          }
-        }
-      }
-    } catch {
-      keyBytes = enc.encode(webhookSecret);
-      console.log('Using raw webhook secret');
-    }
-
-    // Import the HMAC key - @ts-ignore to bypass type check
-    // @ts-ignore
-    const key = await crypto.subtle.importKey(
-      'raw',
-      keyBytes,
-      { name: 'HMAC', hash: { name: 'SHA-256' } },
-      false,
-      ['sign']
-    );
-
-    // Create signed messages per Standard Webhooks
-    const toVerify: string[] = [];
-    if (idHeader && timestamp) {
-      toVerify.push(`${idHeader}.${timestamp}.${payload}`);
-    }
-    if (timestamp) {
-      toVerify.push(`${timestamp}.${payload}`);
-    }
-    toVerify.push(payload);
-    console.log('Verification variants:', { variants: toVerify.length, hasId: Boolean(idHeader), hasTs: Boolean(timestamp) });
-
-    // Compute HMAC and compare
-    const toBase64Url = (buf: ArrayBuffer) => {
-      let b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
-      b64 = b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/,'');
-      return b64;
-    };
-    const toHex = (buf: ArrayBuffer) => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-    
-    let isValid = false;
-    for (const msg of toVerify) {
-      const computed = await crypto.subtle.sign('HMAC', key, enc.encode(msg));
-      const candidates = [
-        toBase64Url(computed),
-        toHex(computed),
-        btoa(String.fromCharCode(...new Uint8Array(computed))), // standard base64 fallback
-      ];
-
-      for (const provided of signatures) {
-        for (const cand of candidates) {
-          if (provided.length === cand.length && constantTimeEqual(provided, cand)) {
-            isValid = true;
-            console.log('Webhook signature verified successfully');
-            break;
-          }
-        }
-        if (isValid) break;
-      }
-      if (isValid) break;
-    }
-
-    if (!isValid) {
-      console.error('Invalid webhook signature. Expected signatures do not match.');
+      // Build plain headers object (lowercased keys)
+      const headersObj: Record<string, string> = {};
+      for (const [k, v] of req.headers) headersObj[k.toLowerCase()] = v;
+      event = validateEvent(rawBody, headersObj, webhookSecret);
+    } catch (err) {
+      const msg = (err as Error)?.message || String(err);
+      console.error('Invalid webhook signature (SDK):', msg);
       return new Response(JSON.stringify({ error: 'Invalid signature' }), { 
         status: 403, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       });
     }
 
-    // Parse and process the webhook event
-    const event = JSON.parse(payload);
+    // Process the webhook event
+
     console.log('Processing webhook event:', event.type);
 
     // Handle different event types
