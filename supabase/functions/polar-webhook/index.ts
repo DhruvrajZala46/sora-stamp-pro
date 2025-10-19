@@ -18,9 +18,48 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Get the raw payload
+    const payload = await req.text();
+    
     // Verify webhook signature
     const signature = req.headers.get('webhook-signature');
-    const payload = await req.text();
+    if (!signature) {
+      console.error('Missing webhook signature');
+      return new Response(
+        JSON.stringify({ error: 'Missing signature' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify the signature using HMAC
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(webhookSecret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['verify']
+    );
+
+    const signatureBuffer = Uint8Array.from(
+      signature.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16))
+    );
+
+    const dataBuffer = encoder.encode(payload);
+    const isValid = await crypto.subtle.verify(
+      'HMAC',
+      key,
+      signatureBuffer,
+      dataBuffer
+    );
+
+    if (!isValid) {
+      console.error('Invalid webhook signature');
+      return new Response(
+        JSON.stringify({ error: 'Invalid signature' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     // Parse the webhook event
     const event = JSON.parse(payload);
@@ -90,20 +129,20 @@ async function handleSubscriptionActive(supabase: any, subscription: any) {
     return;
   }
 
-  // Determine plan and videos based on product
-  const productName = subscription.product?.name?.toLowerCase() || '';
+  // Determine plan and videos based on product ID
+  const productId = subscription.product?.id || '';
   let plan = 'free';
   let videosRemaining = 3;
 
-  if (productName.includes('basic')) {
-    plan = 'basic';
-    videosRemaining = 10;
-  } else if (productName.includes('pro')) {
+  // Pro tier - $9/month
+  if (productId === '0dfb8146-7505-4dc9-b7ce-a669919533b2') {
     plan = 'pro';
-    videosRemaining = 50;
-  } else if (productName.includes('enterprise')) {
-    plan = 'enterprise';
-    videosRemaining = 999999; // Unlimited
+    videosRemaining = 100;
+  } 
+  // Unlimited tier - $29/month (500 videos backend limit)
+  else if (productId === '240aaa37-f58b-4f9c-93ae-e0df52f0644c') {
+    plan = 'unlimited';
+    videosRemaining = 500;
   }
 
   // Update user subscription
