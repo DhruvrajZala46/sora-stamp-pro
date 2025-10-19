@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -15,89 +16,132 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const webhookSecret = Deno.env.get('POLAR_WEBHOOK_SECRET')!;
 
+    if (!webhookSecret) {
+      console.error('POLAR_WEBHOOK_SECRET not configured');
+      return new Response(JSON.stringify({ error: 'Server misconfiguration' }), { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get the raw payload
+    // Get the raw payload for signature verification
     const payload = await req.text();
+    console.log('Webhook received, payload length:', payload.length);
 
-    // Robust webhook signature verification (Polar: "t=<timestamp>, v1=<signature>")
-    const header = (n: string) => req.headers.get(n) || undefined;
-    const rawSignatureHeaders = [
-      header('webhook-signature'),
-      header('polar-signature'),
-      header('x-polar-signature'),
-      header('signature'),
-    ].filter(Boolean) as string[];
+    // === ROBUST WEBHOOK SIGNATURE VERIFICATION ===
+    const getHeader = (name: string) => req.headers.get(name) || undefined;
+    
+    // Try multiple common header names
+    const signatureHeader = getHeader('webhook-signature') || 
+                           getHeader('polar-signature') || 
+                           getHeader('x-polar-signature') || 
+                           getHeader('signature') || '';
+    
+    const timestampHeader = getHeader('webhook-timestamp') || 
+                           getHeader('polar-timestamp') || 
+                           getHeader('x-polar-timestamp') || '';
 
-    if (!rawSignatureHeaders.length) {
-      return new Response(JSON.stringify({ error: 'Missing signature' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    if (!signatureHeader) {
+      console.error('Missing webhook signature header');
+      return new Response(JSON.stringify({ error: 'Missing signature' }), { 
+        status: 401, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
     }
 
-    // Extract timestamp and v1 signatures from possible formats
-    let ts = header('webhook-timestamp') || header('polar-timestamp') || header('x-polar-timestamp') || '';
-    const headerSigs = new Set<string>();
-    for (const h of rawSignatureHeaders) {
-      const parts = h.split(',').map(s => s.trim());
-      for (const p of parts) {
-        const m = /^([a-z0-9_-]+)=(.+)$/i.exec(p);
-        if (m) {
-          const k = m[1].toLowerCase();
-          const v = m[2];
-          if ((k === 't' || k === 'timestamp') && !ts) { ts = v; continue; }
-          if (k === 'v1' || k === 'sha256' || k === 'sig' || k === 'signature') { headerSigs.add(v); continue; }
-        }
+    // Parse signature header (format: "v1,<signature>" or "t=<timestamp>,v1=<signature>")
+    let timestamp = timestampHeader;
+    let signature = '';
+
+    const parts = signatureHeader.split(',').map(p => p.trim());
+    for (const part of parts) {
+      if (part.startsWith('t=')) {
+        timestamp = timestamp || part.substring(2);
+      } else if (part.startsWith('v1=')) {
+        signature = part.substring(3);
+      } else if (part.startsWith('v1,')) {
+        signature = part.substring(3);
+      } else if (!signature && part && !part.includes('=')) {
+        signature = part;
       }
-      // Also handle legacy "v1,<sig>" or header containing only the signature
-      const legacy = h.replace(/^v1,?\s*/i, '');
-      if (legacy && legacy !== h) headerSigs.add(legacy);
-      if (!h.includes('=') && h) headerSigs.add(h);
     }
 
-    // Prepare HMAC keys (try base64-decoded secret first, then raw-encoded)
+    if (!signature) {
+      console.error('Could not extract signature from header:', signatureHeader);
+      return new Response(JSON.stringify({ error: 'Invalid signature format' }), { 
+        status: 401, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    // Prepare the secret key (handle both raw and base64-encoded secrets)
     const enc = new TextEncoder();
-    const b64ToBytes = (b64: string): Uint8Array | null => {
+    
+    let keyBytes: Uint8Array;
+    if (webhookSecret.startsWith('whsec_')) {
       try {
-        const bin = atob(b64);
-        const out = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-        return out;
-      } catch {
-        return null;
+        const base64Secret = webhookSecret.substring(6);
+        const binaryString = atob(base64Secret);
+        const arr = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          arr[i] = binaryString.charCodeAt(i);
+        }
+        keyBytes = arr;
+        console.log('Using base64-decoded webhook secret');
+      } catch (e) {
+        console.error('Failed to decode base64 secret, using raw');
+        keyBytes = enc.encode(webhookSecret);
       }
-    };
-    const secretBytes = b64ToBytes(webhookSecret) ?? enc.encode(webhookSecret);
-    const key = await crypto.subtle.importKey('raw', secretBytes.buffer as ArrayBuffer, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-
-    const toHex = (buf: ArrayBuffer) => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-    const toB64 = (buf: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(buf)));
-
-    const macPayload = await crypto.subtle.sign('HMAC', key, enc.encode(payload));
-    const candidates = new Set<string>([toHex(macPayload), toB64(macPayload)]);
-
-    if (ts) {
-      const macWithTs = await crypto.subtle.sign('HMAC', key, enc.encode(`${ts}.${payload}`));
-      candidates.add(toHex(macWithTs));
-      candidates.add(toB64(macWithTs));
+    } else {
+      keyBytes = enc.encode(webhookSecret);
+      console.log('Using raw webhook secret');
     }
 
-    const timingSafeEqual = (a: string, b: string) => {
-      if (a.length !== b.length) return false;
-      let res = 0;
-      for (let i = 0; i < a.length; i++) res |= a.charCodeAt(i) ^ b.charCodeAt(i);
-      return res === 0;
-    };
+    // Import the HMAC key - @ts-ignore to bypass type check
+    // @ts-ignore
+    const key = await crypto.subtle.importKey(
+      'raw',
+      keyBytes,
+      { name: 'HMAC', hash: { name: 'SHA-256' } },
+      false,
+      ['sign']
+    );
 
-    const valid = Array.from(headerSigs).some(sig => Array.from(candidates).some(c => timingSafeEqual(sig, c)));
+    // Create signed messages (both with and without timestamp)
+    const toVerify: string[] = [];
+    if (timestamp) {
+      toVerify.push(`${timestamp}.${payload}`);
+    }
+    toVerify.push(payload);
 
-    if (!valid) {
-      console.error('Invalid webhook signature');
-      return new Response(JSON.stringify({ error: 'Invalid signature' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    // Compute HMAC and compare
+    const toBase64 = (buf: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+    
+    let isValid = false;
+    for (const msg of toVerify) {
+      const computed = await crypto.subtle.sign('HMAC', key, enc.encode(msg));
+      const computedBase64 = toBase64(computed);
+      
+      if (constantTimeEqual(signature, computedBase64)) {
+        isValid = true;
+        console.log('Webhook signature verified successfully');
+        break;
+      }
     }
 
-    // Parse the webhook event
+    if (!isValid) {
+      console.error('Invalid webhook signature. Expected signatures do not match.');
+      return new Response(JSON.stringify({ error: 'Invalid signature' }), { 
+        status: 403, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    // Parse and process the webhook event
     const event = JSON.parse(payload);
-
-    console.log('Polar webhook received:', event.type);
+    console.log('Processing webhook event:', event.type);
 
     // Handle different event types
     switch (event.type) {
@@ -117,11 +161,12 @@ serve(async (req) => {
         break;
 
       case 'checkout.created':
-        console.log('Checkout created:', event.data);
+      case 'checkout.updated':
+        console.log('Checkout event:', event.type, event.data?.id);
         break;
 
       case 'order.created':
-        console.log('Order created:', event.data);
+        console.log('Order created:', event.data?.id);
         break;
 
       default:
@@ -141,70 +186,83 @@ serve(async (req) => {
   }
 });
 
-async function handleSubscriptionActive(supabase: any, subscription: any) {
-  console.log('Activating subscription:', subscription);
+// Constant-time string comparison to prevent timing attacks
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
 
-  // Get user by email from subscription
+async function handleSubscriptionActive(supabase: any, subscription: any) {
+  console.log('Activating subscription:', subscription.id);
+
   const email = subscription.customer?.email;
   if (!email) {
-    console.error('No email in subscription data');
+    console.error('No email in subscription data:', subscription);
     return;
   }
 
-  // Find user by email
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('id')
     .eq('email', email)
-    .single();
+    .maybeSingle();
 
-  if (!profile) {
-    console.error('User not found for email:', email);
+  if (profileError) {
+    console.error('Error fetching profile:', profileError);
     return;
   }
 
-  // Determine plan and videos based on product ID
-  const productId = subscription.product?.id || '';
+  if (!profile) {
+    console.error('User profile not found for email:', email);
+    return;
+  }
+
+  const productId = subscription.product?.id || subscription.product_id || '';
   let plan = 'free';
   let videosRemaining = 5;
 
-  // Pro tier - $9/month
   if (productId === '0dfb8146-7505-4dc9-b7ce-a669919533b2') {
     plan = 'pro';
     videosRemaining = 100;
-  } 
-  // Unlimited tier - $29/month (500 videos backend limit)
-  else if (productId === '240aaa37-f58b-4f9c-93ae-e0df52f0644c') {
+  } else if (productId === '240aaa37-f58b-4f9c-93ae-e0df52f0644c') {
     plan = 'unlimited';
     videosRemaining = 500;
   }
 
-  // Upsert user subscription to be robust if row is missing
+  console.log(`Setting plan to ${plan} with ${videosRemaining} videos for user ${profile.id}`);
+
   const { error } = await supabase
     .from('user_subscriptions')
-    .upsert([
-      {
-        user_id: profile.id,
-        plan,
-        videos_remaining: videosRemaining,
-        updated_at: new Date().toISOString(),
-      }
-    ], { onConflict: 'user_id' });
+    .upsert({
+      user_id: profile.id,
+      plan,
+      videos_remaining: videosRemaining,
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'user_id',
+      ignoreDuplicates: false
+    });
 
   if (error) {
-    console.error('Error updating subscription:', error);
+    console.error('Error upserting subscription:', error);
   } else {
-    console.log('Subscription activated for user:', profile.id, 'Plan:', plan);
+    console.log(`✅ Subscription activated: user=${profile.id}, plan=${plan}, videos=${videosRemaining}`);
   }
 }
 
 async function handleSubscriptionUpdated(supabase: any, subscription: any) {
-  console.log('Updating subscription:', subscription);
+  console.log('Updating subscription:', subscription.id);
   await handleSubscriptionActive(supabase, subscription);
 }
 
 async function handleSubscriptionCanceled(supabase: any, subscription: any) {
-  console.log('Canceling subscription:', subscription);
+  console.log('Canceling subscription:', subscription.id);
 
   const email = subscription.customer?.email;
   if (!email) {
@@ -212,30 +270,37 @@ async function handleSubscriptionCanceled(supabase: any, subscription: any) {
     return;
   }
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('id')
     .eq('email', email)
-    .single();
+    .maybeSingle();
 
-  if (!profile) {
-    console.error('User not found for email:', email);
+  if (profileError) {
+    console.error('Error fetching profile:', profileError);
     return;
   }
 
-  // Downgrade to free plan
+  if (!profile) {
+    console.error('User profile not found for email:', email);
+    return;
+  }
+
   const { error } = await supabase
     .from('user_subscriptions')
-    .update({
+    .upsert({
+      user_id: profile.id,
       plan: 'free',
       videos_remaining: 5,
       updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', profile.id);
+    }, {
+      onConflict: 'user_id',
+      ignoreDuplicates: false
+    });
 
   if (error) {
     console.error('Error downgrading subscription:', error);
   } else {
-    console.log('Subscription canceled for user:', profile.id);
+    console.log(`✅ Subscription canceled: user=${profile.id}, downgraded to free plan`);
   }
 }
