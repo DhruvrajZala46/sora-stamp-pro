@@ -195,9 +195,13 @@ async function handleSubscriptionActive(supabase: any, polarAccessToken: string,
   });
 
   if (error) {
-    console.error('Error updating subscription:', error);
+    console.error('RPC Error updating subscription:', error);
+    throw new Error(`Failed to update subscription: ${error.message}`);
+  } else if (data && !data.success) {
+    console.error('Subscription update failed:', data);
+    throw new Error(`Subscription update returned failure: ${data.error || data.reason}`);
   } else {
-    console.log(`✅ Subscription activated: user=${profile.id}, plan=${plan}, videos=${videosRemaining}, webhook=${webhookId}`);
+    console.log(`✅ Subscription activated: user=${profile.id}, plan=${plan}, videos=${videosRemaining}, webhook=${webhookId}`, data);
   }
 }
 
@@ -264,8 +268,12 @@ async function handleSubscriptionCanceled(supabase: any, polarAccessToken: strin
   });
 
   if (error) {
-    console.error('Error downgrading subscription:', error);
+    console.error('RPC Error downgrading subscription:', error);
+    throw new Error(`Failed to downgrade subscription: ${error.message}`);
+  } else if (data && !data.success) {
+    console.error('Subscription downgrade failed:', data);
+    throw new Error(`Subscription downgrade returned failure: ${data.error || data.reason}`);
   } else {
-    console.log(`✅ Subscription canceled: user=${profile.id}, downgraded to free plan, webhook=${webhookId}`);
+    console.log(`✅ Subscription canceled: user=${profile.id}, downgraded to free plan, webhook=${webhookId}`, data);
   }
 }

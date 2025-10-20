@@ -176,7 +176,7 @@ export type Database = {
           p_videos_remaining: number
           p_webhook_id: string
         }
-        Returns: boolean
+        Returns: Json
       }
     }
     Enums: {
