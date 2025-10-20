@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,14 +30,28 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { video_id, status, processed_path, error_text } = await req.json();
+    // Validate input schema
+    const CallbackSchema = z.object({
+      video_id: z.string().uuid({ message: 'Invalid video_id format' }),
+      status: z.enum(['completed', 'failed', 'processing']),
+      processed_path: z.string()
+        .regex(/^[a-f0-9-]+\/[a-f0-9-]+_processed\.mp4$/, 'Invalid processed_path format')
+        .optional(),
+      error_text: z.string().max(500).optional()
+    });
 
-    if (!video_id || !status) {
+    let body;
+    try {
+      body = CallbackSchema.parse(await req.json());
+    } catch (validationError) {
+      console.log('Invalid callback format');
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ error: 'Invalid request format' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const { video_id, status, processed_path, error_text } = body;
 
     // Update video status
     const updateData: any = {
@@ -49,7 +64,8 @@ serve(async (req) => {
     }
 
     if (error_text) {
-      updateData.error_text = error_text;
+      // Sanitize error text to prevent XSS
+      updateData.error_text = error_text.replace(/<[^>]*>/g, '').substring(0, 500);
     }
 
     const { error: updateError } = await supabase

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,16 +18,45 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { video_id } = await req.json();
+    // Validate input schema
+    const RequestSchema = z.object({
+      video_id: z.string().uuid({ message: 'Invalid video_id format' })
+    });
 
-    if (!video_id) {
+    let body;
+    try {
+      body = RequestSchema.parse(await req.json());
+    } catch (validationError) {
+      console.log('Invalid request format');
       return new Response(
-        JSON.stringify({ error: 'Missing video_id' }),
+        JSON.stringify({ error: 'Invalid request format' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Get video details
+    const { video_id } = body;
+
+    // Verify user authentication and ownership
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      console.log('Authentication failed');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get video details and verify ownership
     const { data: video, error: videoError } = await supabase
       .from('videos')
       .select('storage_path, user_id')
@@ -35,7 +65,19 @@ serve(async (req) => {
 
     if (videoError || !video) {
       console.log('Video lookup failed');
-      throw new Error('Video not found');
+      return new Response(
+        JSON.stringify({ error: 'Video not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // SECURITY: Verify user owns this video
+    if (video.user_id !== user.id) {
+      console.log('Ownership verification failed');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Update video status to processing

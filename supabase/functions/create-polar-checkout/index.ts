@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,12 +28,24 @@ serve(async (req) => {
     const { data: userData } = authHeader ? await supabase.auth.getUser(authHeader) : { data: { user: null } } as any;
     const user = userData?.user;
 
-    const body = await req.json().catch(() => ({}));
-    const productId: string | undefined = body.productId;
+    // Validate input schema
+    const CheckoutSchema = z.object({
+      productId: z.string().uuid({ message: 'Invalid productId format' }),
+      redirectOrigin: z.string().url().optional()
+    });
 
-    if (!productId) {
-      return new Response(JSON.stringify({ error: 'Missing productId' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    let body;
+    try {
+      body = CheckoutSchema.parse(await req.json());
+    } catch (validationError) {
+      console.log('Invalid checkout request');
+      return new Response(
+        JSON.stringify({ error: 'Invalid request format' }), 
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    const { productId, redirectOrigin } = body;
 
     // Allow only known product IDs for safety
     const allowed = new Set([
@@ -46,7 +59,6 @@ serve(async (req) => {
 
     // Derive the app origin from client or headers to avoid using the functions domain
     const url = new URL(req.url);
-    const redirectOrigin = typeof (body?.redirectOrigin) === 'string' ? body.redirectOrigin : undefined;
     const headerOrigin = req.headers.get('origin') || undefined;
     const headerReferer = req.headers.get('referer') || undefined;
 

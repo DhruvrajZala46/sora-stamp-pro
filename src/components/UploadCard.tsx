@@ -78,27 +78,54 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, m
       return;
     }
 
-    // Validate file size based on user's plan
-    const maxSizeBytes = maxFileSizeMb * 1024 * 1024;
-    if (file.size > maxSizeBytes) {
-      const upgradePlan = currentPlan === 'free' ? 'Starter ($5/mo) for 250MB' : 
-                          currentPlan === 'starter' ? 'Pro ($9/mo) for 500MB' : 
-                          currentPlan === 'pro' ? 'Unlimited ($29/mo) for 1GB' : 
-                          'a higher plan';
-      
-      toast({
-        title: 'File too large',
-        description: `Your plan allows up to ${maxFileSizeMb}MB. Upgrade to ${upgradePlan} for larger files.`,
-        variant: 'destructive',
-      });
-      return;
-    }
-
     setUploading(true);
     setProgress(0);
 
     try {
-      // Check and decrement quota atomically using secure function
+      // Server-side validation before upload
+      const { data: validation, error: validationError } = await supabase.functions.invoke(
+        'validate-upload',
+        {
+          body: {
+            fileSize: file.size,
+            fileType: file.type
+          }
+        }
+      );
+
+      if (validationError || !validation?.allowed) {
+        const reason = validation?.reason || 'unknown';
+        
+        if (reason === 'quota_exceeded') {
+          toast({
+            title: 'Upload limit reached',
+            description: 'Upgrade to Pro for unlimited videos',
+            variant: 'destructive',
+          });
+        } else if (reason === 'file_too_large') {
+          const maxSize = validation?.maxSizeMb || maxFileSizeMb;
+          const plan = validation?.plan || currentPlan;
+          const upgradePlan = plan === 'free' ? 'Starter ($5/mo) for 250MB' : 
+                              plan === 'starter' ? 'Pro ($9/mo) for 500MB' : 
+                              plan === 'pro' ? 'Unlimited ($29/mo) for 1GB' : 
+                              'a higher plan';
+          
+          toast({
+            title: 'File too large',
+            description: `Your plan allows up to ${maxSize}MB. Upgrade to ${upgradePlan} for larger files.`,
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Upload validation failed',
+            description: 'Please try again or contact support',
+            variant: 'destructive',
+          });
+        }
+        return;
+      }
+
+      // Decrement quota atomically after validation
       const { data: hasQuota, error: quotaError } = await supabase.rpc('decrement_videos_remaining', {
         p_user_id: user.id
       });
