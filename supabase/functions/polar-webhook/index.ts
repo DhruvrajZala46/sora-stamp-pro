@@ -57,38 +57,38 @@ serve(async (req) => {
       });
     }
 
-    // Process the webhook event
-
     console.log('Processing webhook event:', event.type);
+    const webhookId = event.id ?? crypto.randomUUID();
+    console.log('Webhook ID:', webhookId);
 
     // Handle different event types
     switch (event.type) {
       case 'subscription.created':
       case 'subscription.active':
       case 'subscription.uncanceled':
-        await handleSubscriptionActive(supabase, polarAccessToken, event.data, event.id);
+        await handleSubscriptionActive(supabase, polarAccessToken, event.data, webhookId);
         break;
 
       case 'subscription.updated':
-        await handleSubscriptionUpdated(supabase, polarAccessToken, event.data, event.id);
+        await handleSubscriptionUpdated(supabase, polarAccessToken, event.data, webhookId);
         break;
 
       case 'subscription.canceled':
       case 'subscription.revoked':
-        await handleSubscriptionCanceled(supabase, polarAccessToken, event.data, event.id);
+        await handleSubscriptionCanceled(supabase, polarAccessToken, event.data, webhookId);
         break;
 
       case 'checkout.created':
       case 'checkout.updated':
-        console.log('Checkout event:', event.type, event.data?.id);
+        console.log('Checkout event:', event.type, event.data?.id, 'webhookId:', webhookId);
         break;
 
       case 'order.created':
-        console.log('Order created:', event.data?.id);
+        console.log('Order created:', event.data?.id, 'webhookId:', webhookId);
         break;
 
       default:
-        console.log('Unhandled event type:', event.type);
+        console.log('Unhandled event type:', event.type, 'webhookId:', webhookId);
     }
 
     return new Response(
