@@ -113,10 +113,24 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Start processing error:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
+    
+    // Return safe error message to client
+    let safeMessage = 'Failed to start processing';
+    let statusCode = 500;
+    
+    if (error instanceof Error) {
+      if (error.message.includes('not found')) {
+        safeMessage = 'Video not found';
+        statusCode = 404;
+      } else if (error.message.includes('not configured')) {
+        safeMessage = 'Service temporarily unavailable';
+        statusCode = 503;
+      }
+    }
+    
     return new Response(
-      JSON.stringify({ error: 'Failed to start processing' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: safeMessage }),
+      { status: statusCode, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

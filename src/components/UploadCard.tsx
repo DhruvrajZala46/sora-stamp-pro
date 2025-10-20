@@ -45,6 +45,21 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining }:
     }
   };
 
+  const sanitizeFilename = (filename: string): string => {
+    // Extract extension safely
+    const lastDot = filename.lastIndexOf('.');
+    const name = lastDot > 0 ? filename.substring(0, lastDot) : filename;
+    const ext = lastDot > 0 ? filename.substring(lastDot) : '.mp4';
+    
+    // Remove path separators and sanitize
+    const clean = name
+      .replace(/[\/\\]/g, '') // Remove slashes
+      .replace(/[^a-zA-Z0-9._-]/g, '_') // Replace special chars
+      .substring(0, 200); // Limit length
+    
+    return clean + ext.substring(0, 10); // Limit extension length
+  };
+
   const handleFile = async (file: File) => {
     if (!user) {
       onAuthRequired();
@@ -90,7 +105,8 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining }:
       }
 
       const timestamp = Date.now();
-      const storagePath = `${user.id}/${timestamp}_${file.name}`;
+      const sanitizedFilename = sanitizeFilename(file.name);
+      const storagePath = `${user.id}/${timestamp}_${sanitizedFilename}`;
 
       // Upload to storage
       const { error: uploadError } = await supabase.storage
@@ -139,7 +155,7 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining }:
       console.error('Upload error:', error);
       toast({
         title: 'Upload failed',
-        description: error.message,
+        description: 'An error occurred during upload. Please try again.',
         variant: 'destructive',
       });
     } finally {
