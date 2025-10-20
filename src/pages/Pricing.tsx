@@ -38,7 +38,7 @@ const pricingPlans = [
     ],
     videoLimit: 25,
     highlighted: false,
-    productId: undefined, // Will be set after Polar product creation
+    productId: "95d38e1c-8f47-4048-b3e3-f06edc38b8d9",
   },
   {
     name: "Pro",

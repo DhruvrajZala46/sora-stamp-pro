@@ -8,44 +8,44 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Premium light theme - Soft multi-toned whites */
-    --background: 210 20% 96%;
-    --foreground: 222 47% 11%;
+    /* Warm, friendly light theme - Soft off-whites and gentle colors */
+    --background: 30 15% 94%;
+    --foreground: 25 25% 15%;
 
-    --card: 0 0% 98%;
-    --card-foreground: 222 47% 11%;
+    --card: 35 20% 96%;
+    --card-foreground: 25 25% 15%;
 
-    --popover: 0 0% 97%;
-    --popover-foreground: 222 47% 11%;
+    --popover: 40 25% 97%;
+    --popover-foreground: 25 25% 15%;
 
-    --primary: 221 83% 53%;
+    --primary: 221 70% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 92%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 35 30% 88%;
+    --secondary-foreground: 25 25% 15%;
 
-    --muted: 220 14% 95%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 40 20% 92%;
+    --muted-foreground: 25 15% 45%;
 
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 200 40% 88%;
+    --accent-foreground: 25 25% 15%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 70% 58%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 221 83% 53%;
+    --border: 35 25% 86%;
+    --input: 35 25% 86%;
+    --ring: 221 70% 55%;
 
     --radius: 0.75rem;
 
-    /* Glass morphism effects - soft light version */
-    --glass-bg: 210 20% 97% / 0.7;
-    --glass-border: 214 32% 88% / 0.4;
+    /* Glass morphism effects - warm and soft */
+    --glass-bg: 35 20% 95% / 0.75;
+    --glass-border: 35 25% 84% / 0.5;
 
-    /* Gradients - subtle and professional */
-    --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%), hsl(250 100% 65%));
-    --gradient-hero: linear-gradient(180deg, hsl(210 20% 98%), hsl(220 14% 95%));
+    /* Gradients - gentle and inviting */
+    --gradient-primary: linear-gradient(135deg, hsl(221 70% 55%), hsl(250 85% 65%));
+    --gradient-hero: linear-gradient(180deg, hsl(35 25% 96%), hsl(40 20% 92%));
 
     /* Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
