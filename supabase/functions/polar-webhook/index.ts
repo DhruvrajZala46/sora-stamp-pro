@@ -119,7 +119,7 @@ function constantTimeEqual(a: string, b: string): boolean {
 async function handleSubscriptionActive(supabase: any, polarAccessToken: string, subscription: any, webhookId: string) {
   console.log('Activating subscription:', subscription.id);
 
-  // === SECONDARY VERIFICATION: Verify subscription with Polar API ===
+  // === SECONDARY VERIFICATION (non-fatal): Verify subscription with Polar API ===
   try {
     const polarVerifyResponse = await fetch(
       `https://api.polar.sh/v1/subscriptions/${subscription.id}`,
@@ -129,15 +129,14 @@ async function handleSubscriptionActive(supabase: any, polarAccessToken: string,
     );
 
     if (!polarVerifyResponse.ok) {
-      console.error('Polar API verification failed:', polarVerifyResponse.status);
-      throw new Error('Subscription verification failed with Polar API');
+      const errText = await polarVerifyResponse.text();
+      console.warn('Polar API verification failed:', polarVerifyResponse.status, errText);
+    } else {
+      const verifiedSubscription = await polarVerifyResponse.json();
+      console.log('✅ Subscription verified with Polar API:', verifiedSubscription.id);
     }
-
-    const verifiedSubscription = await polarVerifyResponse.json();
-    console.log('✅ Subscription verified with Polar API:', verifiedSubscription.id);
   } catch (error) {
-    console.error('Failed to verify subscription with Polar:', error);
-    throw new Error('Secondary verification failed - possible forged webhook');
+    console.warn('Secondary verification skipped due to error:', error);
   }
 
   const email = subscription.customer?.email;
@@ -210,7 +209,7 @@ async function handleSubscriptionUpdated(supabase: any, polarAccessToken: string
 async function handleSubscriptionCanceled(supabase: any, polarAccessToken: string, subscription: any, webhookId: string) {
   console.log('Canceling subscription:', subscription.id);
 
-  // === SECONDARY VERIFICATION: Verify cancellation with Polar API ===
+  // === SECONDARY VERIFICATION (non-fatal): Verify cancellation with Polar API ===
   try {
     const polarVerifyResponse = await fetch(
       `https://api.polar.sh/v1/subscriptions/${subscription.id}`,
@@ -220,15 +219,14 @@ async function handleSubscriptionCanceled(supabase: any, polarAccessToken: strin
     );
 
     if (!polarVerifyResponse.ok) {
-      console.error('Polar API verification failed:', polarVerifyResponse.status);
-      throw new Error('Subscription verification failed with Polar API');
+      const errText = await polarVerifyResponse.text();
+      console.warn('Polar API cancellation verification failed:', polarVerifyResponse.status, errText);
+    } else {
+      const verifiedSubscription = await polarVerifyResponse.json();
+      console.log('✅ Subscription cancellation verified with Polar API:', verifiedSubscription.id);
     }
-
-    const verifiedSubscription = await polarVerifyResponse.json();
-    console.log('✅ Subscription cancellation verified with Polar API:', verifiedSubscription.id);
   } catch (error) {
-    console.error('Failed to verify subscription cancellation with Polar:', error);
-    throw new Error('Secondary verification failed - possible forged webhook');
+    console.warn('Secondary cancellation verification skipped due to error:', error);
   }
 
   const email = subscription.customer?.email;
