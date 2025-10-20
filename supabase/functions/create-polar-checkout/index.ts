@@ -88,16 +88,15 @@ serve(async (req) => {
     });
 
     if (!resp.ok) {
-      const errText = await resp.text();
-      console.error('Polar API error:', resp.status, errText);
-      return new Response(JSON.stringify({ error: 'Failed to create checkout session' }), { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      console.log('Checkout creation failed with status:', resp.status);
+      return new Response(JSON.stringify({ error: 'Failed to create checkout session' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     const checkout = await resp.json();
 
     return new Response(JSON.stringify({ url: checkout.url, id: checkout.id }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-  } catch (e: any) {
-    console.error('create-polar-checkout error:', e);
-    return new Response(JSON.stringify({ error: e?.message ?? 'Internal error' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  } catch (e) {
+    console.log('Checkout request processing failed');
+    return new Response(JSON.stringify({ error: 'An unexpected error occurred' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });

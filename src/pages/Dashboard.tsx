@@ -59,7 +59,6 @@ const Dashboard = () => {
       if (error) throw error;
       return data.signedUrl;
     } catch (error) {
-      console.error('Failed to generate thumbnail:', error);
       return '';
     }
   };
@@ -77,7 +76,6 @@ const Dashboard = () => {
 
     if (error) {
       toast.error('Failed to load videos');
-      console.error(error);
     } else {
       setVideos(data || []);
       setTotalCount(count || 0);
@@ -141,8 +139,7 @@ const Dashboard = () => {
       window.open(data.signedUrl, '_blank');
       toast.success('Download started');
     } catch (error) {
-      console.error(error);
-      toast.error('Failed to download video');
+      toast.error('Unable to download video');
     }
   };
 
@@ -150,6 +147,14 @@ const Dashboard = () => {
     if (!deleteVideo) return;
 
     try {
+      // Get video details for storage cleanup
+      const { data: video } = await supabase
+        .from('videos')
+        .select('storage_path, processed_path')
+        .eq('id', deleteVideo.id)
+        .single();
+
+      // Delete from database
       const { error } = await supabase
         .from('videos')
         .delete()
@@ -157,11 +162,18 @@ const Dashboard = () => {
 
       if (error) throw error;
 
+      // Clean up storage objects
+      if (video?.storage_path) {
+        await supabase.storage.from('uploads').remove([video.storage_path]);
+      }
+      if (video?.processed_path) {
+        await supabase.storage.from('processed').remove([video.processed_path]);
+      }
+
       toast.success('Video deleted successfully');
       setDeleteVideo(null);
       fetchVideos(currentPage);
     } catch (error) {
-      console.error(error);
       toast.error('Failed to delete video');
     }
   };
@@ -182,8 +194,7 @@ const Dashboard = () => {
       await navigator.clipboard.writeText(data.signedUrl);
       toast.success('Share link copied to clipboard');
     } catch (error) {
-      console.error(error);
-      toast.error('Failed to create share link');
+      toast.error('Unable to share video');
     }
   };
 

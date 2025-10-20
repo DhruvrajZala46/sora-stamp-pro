@@ -17,7 +17,7 @@ serve(async (req) => {
     const expectedSecret = Deno.env.get('WORKER_SHARED_SECRET');
     
     if (!workerSecret || workerSecret !== expectedSecret) {
-      console.error('Invalid or missing worker secret');
+      console.log('Unauthorized callback attempt');
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -58,7 +58,7 @@ serve(async (req) => {
       .eq('id', video_id);
 
     if (updateError) {
-      console.error('Database update error:', updateError);
+      console.log('Video status update failed');
       throw new Error('Failed to update video status');
     }
 
@@ -69,10 +69,9 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Callback error:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.log('Callback processing failed');
     return new Response(
-      JSON.stringify({ error: message }),
+      JSON.stringify({ error: 'Callback processing failed' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

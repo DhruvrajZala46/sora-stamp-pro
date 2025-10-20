@@ -26,7 +26,7 @@ const VideoPlayer = ({ videoId, processedPath }: VideoPlayerProps) => {
         if (error) throw error;
         if (!cancelled) setPlaybackUrl(data.signedUrl);
       } catch (e) {
-        console.error('Failed to create playback URL', e);
+        // Silently fail - video player will show without URL
       }
     }
     genPlaybackUrl();
@@ -48,10 +48,10 @@ const VideoPlayer = ({ videoId, processedPath }: VideoPlayerProps) => {
         title: 'Download started',
         description: 'Your watermarked video is ready!',
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: 'Download failed',
-        description: error.message,
+        description: 'Unable to download video',
         variant: 'destructive',
       });
     }

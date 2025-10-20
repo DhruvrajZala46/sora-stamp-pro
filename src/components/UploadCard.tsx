@@ -159,8 +159,7 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, m
       });
 
       onUploadComplete(videoData.id);
-    } catch (error: any) {
-      console.error('Upload error:', error);
+    } catch (error) {
       toast({
         title: 'Upload failed',
         description: 'An error occurred during upload. Please try again.',

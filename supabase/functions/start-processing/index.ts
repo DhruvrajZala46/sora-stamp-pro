@@ -34,7 +34,7 @@ serve(async (req) => {
       .single();
 
     if (videoError || !video) {
-      console.error('Video not found:', videoError);
+      console.log('Video lookup failed');
       throw new Error('Video not found');
     }
 
@@ -53,7 +53,7 @@ serve(async (req) => {
       .createSignedUrl(video.storage_path, 3600);
 
     if (downloadError || !downloadData) {
-      console.error('Failed to create download URL:', downloadError);
+      console.log('Download URL generation failed');
       throw new Error('Failed to create signed URL for download');
     }
 
@@ -64,7 +64,7 @@ serve(async (req) => {
       .createSignedUploadUrl(processedPath);
 
     if (uploadError || !uploadData) {
-      console.error('Failed to create upload URL:', uploadError);
+      console.log('Upload URL generation failed');
       throw new Error('Failed to create signed URL for upload');
     }
 
@@ -97,11 +97,10 @@ serve(async (req) => {
           })
         });
         if (!resp.ok) {
-          const errorText = await resp.text();
-          console.error('Worker error:', errorText);
+          console.log('Worker processing initiation failed');
         }
       } catch (e) {
-        console.error('Failed to trigger worker:', e);
+        console.log('Worker trigger failed');
       }
     })();
 
@@ -112,7 +111,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Start processing error:', error);
+    console.log('Processing request failed');
     
     // Return safe error message to client
     let safeMessage = 'Failed to start processing';

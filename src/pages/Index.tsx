@@ -135,7 +135,7 @@ const Index = () => {
       // Redirect to dashboard to show progress
       window.location.href = '/dashboard';
     } catch (error) {
-      console.error('Error starting processing:', error);
+      setVideoStatus(null);
     }
   };
 
