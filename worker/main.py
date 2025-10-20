@@ -100,7 +100,7 @@ def process_video():
             callback_url,
             json={
                 'video_id': video_id,
-                'status': 'done',
+                'status': 'completed',
                 'processed_path': upload_path
             },
             headers={'x-worker-secret': callback_secret}
@@ -133,7 +133,7 @@ def process_video():
                     callback_url,
                     json={
                         'video_id': video_id,
-                        'status': 'error',
+                        'status': 'failed',
                         'error_text': str(e)
                     },
                     headers={'x-worker-secret': callback_secret}
