@@ -64,7 +64,15 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, m
 
   const handleFile = async (file: File) => {
     if (!user) {
-      onAuthRequired();
+      try {
+        onAuthRequired();
+      } catch (e) {
+        // no-op
+      }
+      // Hard redirect fallback to ensure we always land on the official auth page
+      if (typeof window !== 'undefined') {
+        window.location.href = '/auth';
+      }
       return;
     }
 
