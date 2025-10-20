@@ -24,38 +24,17 @@ const BeforeAfterDemo = () => {
                 <video
                   id="before-video"
                   className="w-full h-full object-cover"
-                  controls
                   playsInline
+                  muted
+                  autoPlay
+                  loop
+                  preload="metadata"
                   poster="/placeholder.svg"
+                  aria-label="Before video preview"
                 >
                   <source src="/videos/before.mp4" type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
-                <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-                  <div className="text-center space-y-2 p-6">
-                    <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
-                      <svg
-                        className="w-8 h-8 text-primary"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
-                    <p className="text-sm text-muted-foreground font-medium">
-                      Original Video
-                    </p>
-                    <p className="text-xs text-muted-foreground/70">
-                      Upload your before demo video
-                    </p>
-                  </div>
-                </div>
               </div>
             </Card>
           </div>
@@ -77,38 +56,17 @@ const BeforeAfterDemo = () => {
                 <video
                   id="after-video"
                   className="w-full h-full object-cover"
-                  controls
                   playsInline
+                  muted
+                  autoPlay
+                  loop
+                  preload="metadata"
                   poster="/placeholder.svg"
+                  aria-label="After video preview"
                 >
                   <source src="/videos/after.mp4" type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
-                <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-                  <div className="text-center space-y-2 p-6">
-                    <div className="w-16 h-16 mx-auto bg-primary/20 rounded-full flex items-center justify-center">
-                      <svg
-                        className="w-8 h-8 text-primary"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    </div>
-                    <p className="text-sm font-medium text-primary">
-                      With SoraStamp
-                    </p>
-                    <p className="text-xs text-muted-foreground/70">
-                      Upload your after demo video
-                    </p>
-                  </div>
-                </div>
               </div>
             </Card>
           </div>
