@@ -24,6 +24,23 @@ const pricingPlans = [
     checkoutLink: null,
   },
   {
+    name: "Starter",
+    price: "$5",
+    period: "month",
+    description: "Ideal for casual users",
+    features: [
+      "25 videos per month",
+      "All features included",
+      "250MB max file size",
+      "Fast processing",
+      "HD video quality",
+      "Custom watermark options",
+    ],
+    videoLimit: 25,
+    highlighted: false,
+    productId: undefined, // Will be set after Polar product creation
+  },
+  {
     name: "Pro",
     price: "$9",
     period: "month",

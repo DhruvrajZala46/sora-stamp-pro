@@ -8,44 +8,44 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Premium light theme - Professional & Minimalist with softer whites */
-    --background: 240 5% 98%;
-    --foreground: 240 10% 4%;
+    /* Premium light theme - Soft multi-toned whites */
+    --background: 210 20% 96%;
+    --foreground: 222 47% 11%;
 
-    --card: 0 0% 99%;
-    --card-foreground: 240 10% 4%;
+    --card: 0 0% 98%;
+    --card-foreground: 222 47% 11%;
 
-    --popover: 0 0% 99%;
-    --popover-foreground: 240 10% 4%;
+    --popover: 0 0% 97%;
+    --popover-foreground: 222 47% 11%;
 
     --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 4% 95%;
-    --secondary-foreground: 240 10% 4%;
+    --secondary: 220 14% 92%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 240 4% 94%;
-    --muted-foreground: 240 4% 46%;
+    --muted: 220 14% 95%;
+    --muted-foreground: 215 16% 47%;
 
-    --accent: 240 4% 95%;
-    --accent-foreground: 240 10% 4%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
     --ring: 221 83% 53%;
 
     --radius: 0.75rem;
 
-    /* Glass morphism effects - light version */
-    --glass-bg: 0 0% 99% / 0.8;
-    --glass-border: 240 6% 90% / 0.5;
+    /* Glass morphism effects - soft light version */
+    --glass-bg: 210 20% 97% / 0.7;
+    --glass-border: 214 32% 88% / 0.4;
 
     /* Gradients - subtle and professional */
     --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%), hsl(250 100% 65%));
-    --gradient-hero: linear-gradient(180deg, hsl(240 5% 98%), hsl(240 4% 96%));
+    --gradient-hero: linear-gradient(180deg, hsl(210 20% 98%), hsl(220 14% 95%));
 
     /* Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
