@@ -7,6 +7,8 @@ import AuthModal from '@/components/AuthModal';
 import UploadCard from '@/components/UploadCard';
 import LoadingScreen from '@/components/LoadingScreen';
 import VideoPlayer from '@/components/VideoPlayer';
+import BeforeAfterDemo from '@/components/BeforeAfterDemo';
+import Footer from '@/components/Footer';
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -173,6 +175,12 @@ const Index = () => {
           )}
         </div>
       </div>
+
+      {/* Before/After Demo Section */}
+      <BeforeAfterDemo />
+
+      {/* Footer */}
+      <Footer />
 
       {/* Loading Screen */}
       {videoStatus === 'processing' && <LoadingScreen />}
