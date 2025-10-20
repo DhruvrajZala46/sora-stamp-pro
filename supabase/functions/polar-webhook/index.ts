@@ -142,6 +142,9 @@ async function handleSubscriptionActive(supabase: any, subscription: any) {
   } else if (productId === '240aaa37-f58b-4f9c-93ae-e0df52f0644c') {
     plan = 'unlimited';
     videosRemaining = 500;
+  } else if (productId === '95d38e1c-8f47-4048-b3e3-f06edc38b8d9') {
+    plan = 'starter';
+    videosRemaining = 25;
   }
 
   console.log(`Setting plan to ${plan} with ${videosRemaining} videos for user ${profile.id}`);
