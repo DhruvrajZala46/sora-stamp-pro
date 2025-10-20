@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
+import { useNavigate } from 'react-router-dom';
 import StarField from '@/components/StarField';
 import Navbar from '@/components/Navbar';
-import AuthModal from '@/components/AuthModal';
 import UploadCard from '@/components/UploadCard';
 import LoadingScreen from '@/components/LoadingScreen';
 import VideoPlayer from '@/components/VideoPlayer';
@@ -11,8 +11,8 @@ import BeforeAfterDemo from '@/components/BeforeAfterDemo';
 import Footer from '@/components/Footer';
 
 const Index = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [plan, setPlan] = useState('free');
   const [videosRemaining, setVideosRemaining] = useState(3);
   const [maxFileSizeMb, setMaxFileSizeMb] = useState(100);
@@ -166,7 +166,7 @@ const Index = () => {
           <div className="max-w-xl mx-auto">
             <UploadCard
               user={user}
-              onAuthRequired={() => setAuthModalOpen(true)}
+              onAuthRequired={() => navigate('/auth')}
               onUploadComplete={handleUploadComplete}
               videosRemaining={videosRemaining}
               maxFileSizeMb={maxFileSizeMb}
@@ -188,19 +188,6 @@ const Index = () => {
 
       {/* Footer */}
       <Footer />
-
-      {/* Removed full-screen loading - now shows on Dashboard */}
-
-      {/* Auth Modal */}
-      <AuthModal
-        open={authModalOpen}
-        onOpenChange={setAuthModalOpen}
-        onSuccess={() => {
-          if (user) {
-            fetchSubscription(user.id);
-          }
-        }}
-      />
     </div>
   );
 };
