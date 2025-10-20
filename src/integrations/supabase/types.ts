@@ -116,6 +116,42 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_audit: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          payload_hash: string
+          plan: string | null
+          processed_at: string
+          subscription_id: string | null
+          user_id: string | null
+          webhook_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          payload_hash: string
+          plan?: string | null
+          processed_at?: string
+          subscription_id?: string | null
+          user_id?: string | null
+          webhook_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload_hash?: string
+          plan?: string | null
+          processed_at?: string
+          subscription_id?: string | null
+          user_id?: string | null
+          webhook_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -128,6 +164,19 @@ export type Database = {
       get_user_file_size_limit: {
         Args: { p_user_id: string }
         Returns: number
+      }
+      update_subscription_from_webhook: {
+        Args: {
+          p_event_type: string
+          p_max_file_size_mb: number
+          p_plan: string
+          p_product_id: string
+          p_subscription_id: string
+          p_user_id: string
+          p_videos_remaining: number
+          p_webhook_id: string
+        }
+        Returns: boolean
       }
     }
     Enums: {

@@ -16,9 +16,18 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const webhookSecret = Deno.env.get('POLAR_WEBHOOK_SECRET')!;
+    const polarAccessToken = Deno.env.get('POLAR_ACCESS_TOKEN')!;
 
     if (!webhookSecret) {
       console.error('POLAR_WEBHOOK_SECRET not configured');
+      return new Response(JSON.stringify({ error: 'Server misconfiguration' }), { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    if (!polarAccessToken) {
+      console.error('POLAR_ACCESS_TOKEN not configured');
       return new Response(JSON.stringify({ error: 'Server misconfiguration' }), { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -57,16 +66,16 @@ serve(async (req) => {
       case 'subscription.created':
       case 'subscription.active':
       case 'subscription.uncanceled':
-        await handleSubscriptionActive(supabase, event.data);
+        await handleSubscriptionActive(supabase, polarAccessToken, event.data, event.id);
         break;
 
       case 'subscription.updated':
-        await handleSubscriptionUpdated(supabase, event.data);
+        await handleSubscriptionUpdated(supabase, polarAccessToken, event.data, event.id);
         break;
 
       case 'subscription.canceled':
       case 'subscription.revoked':
-        await handleSubscriptionCanceled(supabase, event.data);
+        await handleSubscriptionCanceled(supabase, polarAccessToken, event.data, event.id);
         break;
 
       case 'checkout.created':
@@ -107,8 +116,29 @@ function constantTimeEqual(a: string, b: string): boolean {
   return result === 0;
 }
 
-async function handleSubscriptionActive(supabase: any, subscription: any) {
+async function handleSubscriptionActive(supabase: any, polarAccessToken: string, subscription: any, webhookId: string) {
   console.log('Activating subscription:', subscription.id);
+
+  // === SECONDARY VERIFICATION: Verify subscription with Polar API ===
+  try {
+    const polarVerifyResponse = await fetch(
+      `https://api.polar.sh/v1/subscriptions/${subscription.id}`,
+      {
+        headers: { 'Authorization': `Bearer ${polarAccessToken}` }
+      }
+    );
+
+    if (!polarVerifyResponse.ok) {
+      console.error('Polar API verification failed:', polarVerifyResponse.status);
+      throw new Error('Subscription verification failed with Polar API');
+    }
+
+    const verifiedSubscription = await polarVerifyResponse.json();
+    console.log('✅ Subscription verified with Polar API:', verifiedSubscription.id);
+  } catch (error) {
+    console.error('Failed to verify subscription with Polar:', error);
+    throw new Error('Secondary verification failed - possible forged webhook');
+  }
 
   const email = subscription.customer?.email;
   if (!email) {
@@ -153,33 +183,53 @@ async function handleSubscriptionActive(supabase: any, subscription: any) {
 
   console.log(`Setting plan to ${plan} with ${videosRemaining} videos and ${maxFileSizeMb}MB limit for user ${profile.id}`);
 
-  const { error } = await supabase
-    .from('user_subscriptions')
-    .upsert({
-      user_id: profile.id,
-      plan,
-      videos_remaining: videosRemaining,
-      max_file_size_mb: maxFileSizeMb,
-      updated_at: new Date().toISOString(),
-    }, {
-      onConflict: 'user_id',
-      ignoreDuplicates: false
-    });
+  // Use secure database function with replay protection and validation
+  const { data, error } = await supabase.rpc('update_subscription_from_webhook', {
+    p_user_id: profile.id,
+    p_plan: plan,
+    p_videos_remaining: videosRemaining,
+    p_max_file_size_mb: maxFileSizeMb,
+    p_product_id: productId,
+    p_subscription_id: subscription.id,
+    p_webhook_id: webhookId,
+    p_event_type: 'subscription.active'
+  });
 
   if (error) {
-    console.error('Error upserting subscription:', error);
+    console.error('Error updating subscription:', error);
   } else {
-    console.log(`✅ Subscription activated: user=${profile.id}, plan=${plan}, videos=${videosRemaining}`);
+    console.log(`✅ Subscription activated: user=${profile.id}, plan=${plan}, videos=${videosRemaining}, webhook=${webhookId}`);
   }
 }
 
-async function handleSubscriptionUpdated(supabase: any, subscription: any) {
+async function handleSubscriptionUpdated(supabase: any, polarAccessToken: string, subscription: any, webhookId: string) {
   console.log('Updating subscription:', subscription.id);
-  await handleSubscriptionActive(supabase, subscription);
+  await handleSubscriptionActive(supabase, polarAccessToken, subscription, webhookId);
 }
 
-async function handleSubscriptionCanceled(supabase: any, subscription: any) {
+async function handleSubscriptionCanceled(supabase: any, polarAccessToken: string, subscription: any, webhookId: string) {
   console.log('Canceling subscription:', subscription.id);
+
+  // === SECONDARY VERIFICATION: Verify cancellation with Polar API ===
+  try {
+    const polarVerifyResponse = await fetch(
+      `https://api.polar.sh/v1/subscriptions/${subscription.id}`,
+      {
+        headers: { 'Authorization': `Bearer ${polarAccessToken}` }
+      }
+    );
+
+    if (!polarVerifyResponse.ok) {
+      console.error('Polar API verification failed:', polarVerifyResponse.status);
+      throw new Error('Subscription verification failed with Polar API');
+    }
+
+    const verifiedSubscription = await polarVerifyResponse.json();
+    console.log('✅ Subscription cancellation verified with Polar API:', verifiedSubscription.id);
+  } catch (error) {
+    console.error('Failed to verify subscription cancellation with Polar:', error);
+    throw new Error('Secondary verification failed - possible forged webhook');
+  }
 
   const email = subscription.customer?.email;
   if (!email) {
@@ -203,22 +253,21 @@ async function handleSubscriptionCanceled(supabase: any, subscription: any) {
     return;
   }
 
-  const { error } = await supabase
-    .from('user_subscriptions')
-    .upsert({
-      user_id: profile.id,
-      plan: 'free',
-      videos_remaining: 5,
-      max_file_size_mb: 100,
-      updated_at: new Date().toISOString(),
-    }, {
-      onConflict: 'user_id',
-      ignoreDuplicates: false
-    });
+  // Use secure database function with replay protection and validation
+  const { data, error } = await supabase.rpc('update_subscription_from_webhook', {
+    p_user_id: profile.id,
+    p_plan: 'free',
+    p_videos_remaining: 5,
+    p_max_file_size_mb: 100,
+    p_product_id: '',
+    p_subscription_id: subscription.id,
+    p_webhook_id: webhookId,
+    p_event_type: 'subscription.canceled'
+  });
 
   if (error) {
     console.error('Error downgrading subscription:', error);
   } else {
-    console.log(`✅ Subscription canceled: user=${profile.id}, downgraded to free plan`);
+    console.log(`✅ Subscription canceled: user=${profile.id}, downgraded to free plan, webhook=${webhookId}`);
   }
 }
