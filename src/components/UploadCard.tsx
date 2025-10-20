@@ -11,9 +11,11 @@ interface UploadCardProps {
   onAuthRequired: () => void;
   onUploadComplete: (videoId: string) => void;
   videosRemaining: number;
+  maxFileSizeMb: number;
+  currentPlan: string;
 }
 
-const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining }: UploadCardProps) => {
+const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, maxFileSizeMb, currentPlan }: UploadCardProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -76,11 +78,17 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining }:
       return;
     }
 
-    // Validate file size (max 500MB)
-    if (file.size > 500 * 1024 * 1024) {
+    // Validate file size based on user's plan
+    const maxSizeBytes = maxFileSizeMb * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      const upgradePlan = currentPlan === 'free' ? 'Starter ($5/mo) for 250MB' : 
+                          currentPlan === 'starter' ? 'Pro ($9/mo) for 500MB' : 
+                          currentPlan === 'pro' ? 'Unlimited ($29/mo) for 1GB' : 
+                          'a higher plan';
+      
       toast({
         title: 'File too large',
-        description: 'Maximum file size is 500MB',
+        description: `Your plan allows up to ${maxFileSizeMb}MB. Upgrade to ${upgradePlan} for larger files.`,
         variant: 'destructive',
       });
       return;

@@ -45,6 +45,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          max_file_size_mb: number
           plan: string
           updated_at: string
           user_id: string
@@ -53,6 +54,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          max_file_size_mb?: number
           plan?: string
           updated_at?: string
           user_id: string
@@ -61,6 +63,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          max_file_size_mb?: number
           plan?: string
           updated_at?: string
           user_id?: string
@@ -121,6 +124,10 @@ export type Database = {
       decrement_videos_remaining: {
         Args: { p_user_id: string }
         Returns: boolean
+      }
+      get_user_file_size_limit: {
+        Args: { p_user_id: string }
+        Returns: number
       }
     }
     Enums: {

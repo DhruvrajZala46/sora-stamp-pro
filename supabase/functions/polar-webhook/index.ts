@@ -135,19 +135,23 @@ async function handleSubscriptionActive(supabase: any, subscription: any) {
   const productId = subscription.product?.id || subscription.product_id || '';
   let plan = 'free';
   let videosRemaining = 5;
+  let maxFileSizeMb = 100;
 
   if (productId === '0dfb8146-7505-4dc9-b7ce-a669919533b2') {
     plan = 'pro';
     videosRemaining = 100;
+    maxFileSizeMb = 500;
   } else if (productId === '240aaa37-f58b-4f9c-93ae-e0df52f0644c') {
     plan = 'unlimited';
     videosRemaining = 500;
+    maxFileSizeMb = 1000;
   } else if (productId === '95d38e1c-8f47-4048-b3e3-f06edc38b8d9') {
     plan = 'starter';
     videosRemaining = 25;
+    maxFileSizeMb = 250;
   }
 
-  console.log(`Setting plan to ${plan} with ${videosRemaining} videos for user ${profile.id}`);
+  console.log(`Setting plan to ${plan} with ${videosRemaining} videos and ${maxFileSizeMb}MB limit for user ${profile.id}`);
 
   const { error } = await supabase
     .from('user_subscriptions')
@@ -155,6 +159,7 @@ async function handleSubscriptionActive(supabase: any, subscription: any) {
       user_id: profile.id,
       plan,
       videos_remaining: videosRemaining,
+      max_file_size_mb: maxFileSizeMb,
       updated_at: new Date().toISOString(),
     }, {
       onConflict: 'user_id',
@@ -204,6 +209,7 @@ async function handleSubscriptionCanceled(supabase: any, subscription: any) {
       user_id: profile.id,
       plan: 'free',
       videos_remaining: 5,
+      max_file_size_mb: 100,
       updated_at: new Date().toISOString(),
     }, {
       onConflict: 'user_id',

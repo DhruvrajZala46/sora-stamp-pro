@@ -15,6 +15,7 @@ const Index = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [plan, setPlan] = useState('free');
   const [videosRemaining, setVideosRemaining] = useState(3);
+  const [maxFileSizeMb, setMaxFileSizeMb] = useState(100);
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
   const [videoStatus, setVideoStatus] = useState<string>('');
   const [processedPath, setProcessedPath] = useState<string | null>(null);
@@ -110,6 +111,7 @@ const Index = () => {
     if (data) {
       setPlan(data.plan);
       setVideosRemaining(data.videos_remaining);
+      setMaxFileSizeMb(data.max_file_size_mb || 100);
     }
   };
 
@@ -164,6 +166,8 @@ const Index = () => {
               onAuthRequired={() => setAuthModalOpen(true)}
               onUploadComplete={handleUploadComplete}
               videosRemaining={videosRemaining}
+              maxFileSizeMb={maxFileSizeMb}
+              currentPlan={plan}
             />
           </div>
 
