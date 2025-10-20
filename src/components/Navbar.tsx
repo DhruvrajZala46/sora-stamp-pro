@@ -26,11 +26,8 @@ const Navbar = ({ user, plan = 'free', onLogout }: NavbarProps) => {
             onClick={() => navigate('/')}
           >
             <Video className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
-            <span className="text-lg sm:text-xl font-bold text-foreground hidden sm:inline">
+            <span className="text-lg sm:text-xl font-bold text-foreground">
               SoraStamp
-            </span>
-            <span className="text-lg font-bold text-foreground sm:hidden">
-              Sora
             </span>
           </div>
 
@@ -57,17 +54,17 @@ const Navbar = ({ user, plan = 'free', onLogout }: NavbarProps) => {
                 >
                   My Videos
                 </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => navigate('/profile')}
+                  className="text-foreground/80 hover:text-foreground rounded-full px-4"
+                >
+                  Profile
+                </Button>
               </>
             ) : (
               <>
-                <Button 
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate('/pricing')}
-                  className="text-foreground/80 hover:text-foreground rounded-full px-4"
-                >
-                  Download
-                </Button>
                 <Button 
                   onClick={() => navigate('/auth')}
                   className="bg-foreground/10 hover:bg-foreground/20 text-foreground rounded-full px-6 py-2 text-sm font-medium transition-all"
@@ -134,16 +131,6 @@ const Navbar = ({ user, plan = 'free', onLogout }: NavbarProps) => {
               </>
             ) : (
               <>
-                <Button 
-                  variant="ghost"
-                  className="w-full justify-start text-foreground/80 hover:text-foreground"
-                  onClick={() => {
-                    navigate('/pricing');
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  Download
-                </Button>
                 <Button 
                   onClick={() => {
                     navigate('/auth');
