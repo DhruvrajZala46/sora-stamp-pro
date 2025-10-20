@@ -81,10 +81,10 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen sora-hero flex items-center justify-center px-6">
+    <div className="min-h-screen sora-hero flex items-center justify-center px-4 sm:px-6 py-8">
       <StarField />
       <div className="relative z-10 w-full max-w-md">
-        <div className="glass-card rounded-2xl p-8 space-y-6">
+        <div className="glass-card rounded-2xl p-6 sm:p-8 space-y-6">
           {emailSent ? (
             <div className="text-center space-y-4">
               <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
@@ -112,10 +112,10 @@ const Auth = () => {
           ) : (
             <>
               <div className="text-center space-y-2">
-                <h1 className="text-3xl font-bold">
+                <h1 className="text-2xl sm:text-3xl font-bold">
                   {isLogin ? 'Welcome Back' : 'Create Account'}
                 </h1>
-                <p className="text-muted-foreground">
+                <p className="text-sm sm:text-base text-muted-foreground">
                   {isLogin ? 'Sign in to start watermarking' : 'Get started with 3 free videos'}
                 </p>
               </div>

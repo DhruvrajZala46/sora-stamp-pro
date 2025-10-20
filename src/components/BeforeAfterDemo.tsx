@@ -2,15 +2,15 @@ import { Card } from "@/components/ui/card";
 
 const BeforeAfterDemo = () => {
   return (
-    <section className="relative z-10 w-full max-w-6xl mx-auto px-6 py-20">
-      <div className="text-center space-y-4 mb-12">
-        <h2 className="text-4xl md:text-5xl font-bold">See the Magic</h2>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+    <section className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
+      <div className="text-center space-y-3 sm:space-y-4 mb-8 sm:mb-12">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold">See the Magic</h2>
+        <p className="text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
           Watch how SoraStamp transforms your videos with authentic watermarks
         </p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8 md:gap-12">
+      <div className="grid md:grid-cols-2 gap-6 sm:gap-8 md:gap-12">
         {/* Before Video */}
         <div className="space-y-4">
           <div className="relative">
@@ -28,7 +28,7 @@ const BeforeAfterDemo = () => {
                   playsInline
                   poster="/placeholder.svg"
                 >
-                  <source src="" type="video/mp4" />
+                  <source src="/videos/before.mp4" type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
                 <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
@@ -81,7 +81,7 @@ const BeforeAfterDemo = () => {
                   playsInline
                   poster="/placeholder.svg"
                 >
-                  <source src="" type="video/mp4" />
+                  <source src="/videos/after.mp4" type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
                 <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">

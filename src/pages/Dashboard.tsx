@@ -210,16 +210,16 @@ const getStatusBadge = (status: string) => {
     <div className="min-h-screen sora-hero">
       <StarField />
       <Navbar user={user} onLogout={() => supabase.auth.signOut()} />
-      <div className="relative z-10 min-h-screen px-6 pt-24 pb-12">
+      <div className="relative z-10 min-h-screen px-4 sm:px-6 pt-24 pb-12">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-4xl font-bold mb-2">My Videos</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-3xl sm:text-4xl font-bold mb-2">My Videos</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 {totalCount} {totalCount === 1 ? 'video' : 'videos'} total
               </p>
             </div>
-            <Button onClick={() => navigate('/')} className="btn-hero">
+            <Button onClick={() => navigate('/')} className="btn-hero w-full sm:w-auto text-sm sm:text-base">
               Upload New Video
             </Button>
           </div>

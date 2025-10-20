@@ -139,20 +139,20 @@ const Index = () => {
       <StarField />
       <Navbar user={user} plan={plan} onLogout={handleLogout} />
 
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 pt-20">
-        <div className="max-w-4xl mx-auto text-center space-y-12">
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 pt-20 sm:pt-24">
+        <div className="max-w-4xl mx-auto text-center space-y-8 sm:space-y-12">
           {/* Hero Section */}
-          <div className="space-y-6">
-            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-primary to-accent rounded-3xl flex items-center justify-center shadow-2xl">
-              <div className="w-14 h-14 bg-white/10 rounded-2xl backdrop-blur-sm" />
+          <div className="space-y-4 sm:space-y-6">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-gradient-to-br from-primary to-accent rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-2xl">
+              <div className="w-10 h-10 sm:w-14 sm:h-14 bg-white/10 rounded-xl sm:rounded-2xl backdrop-blur-sm" />
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold px-4">
               The new SoraStamp app
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-base sm:text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto px-4">
               Add viral SORA watermarks to your videos with hyperreal motion and authenticity.
             </p>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-sm sm:text-lg text-muted-foreground">
               Rolling out now.
             </p>
           </div>
