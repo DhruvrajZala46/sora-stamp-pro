@@ -103,7 +103,7 @@ def process_video():
                 'status': 'completed',
                 'processed_path': upload_path
             },
-            headers={'x-worker-secret': callback_secret}
+            headers={'x-worker-secret': callback_secret, 'Content-Type': 'application/json'}
         )
         callback_response.raise_for_status()
         
@@ -136,7 +136,7 @@ def process_video():
                         'status': 'failed',
                         'error_text': str(e)
                     },
-                    headers={'x-worker-secret': callback_secret}
+                    headers={'x-worker-secret': callback_secret, 'Content-Type': 'application/json'}
                 )
             except Exception as callback_error:
                 logger.error(f'Failed to send error callback: {callback_error}')
