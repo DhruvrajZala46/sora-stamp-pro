@@ -1,6 +1,36 @@
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Play, Pause } from "lucide-react";
+import { useRef, useState } from "react";
 
 const BeforeAfterDemo = () => {
+  const beforeVideoRef = useRef<HTMLVideoElement>(null);
+  const afterVideoRef = useRef<HTMLVideoElement>(null);
+  const [isBeforePlaying, setIsBeforePlaying] = useState(false);
+  const [isAfterPlaying, setIsAfterPlaying] = useState(false);
+
+  const toggleBeforeVideo = () => {
+    if (beforeVideoRef.current) {
+      if (isBeforePlaying) {
+        beforeVideoRef.current.pause();
+      } else {
+        beforeVideoRef.current.play();
+      }
+      setIsBeforePlaying(!isBeforePlaying);
+    }
+  };
+
+  const toggleAfterVideo = () => {
+    if (afterVideoRef.current) {
+      if (isAfterPlaying) {
+        afterVideoRef.current.pause();
+      } else {
+        afterVideoRef.current.play();
+      }
+      setIsAfterPlaying(!isAfterPlaying);
+    }
+  };
+
   return (
     <section className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
       <div className="text-center space-y-3 sm:space-y-4 mb-8 sm:mb-12">
@@ -22,11 +52,11 @@ const BeforeAfterDemo = () => {
             <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 transition-all duration-300">
               <div className="aspect-[9/16] bg-muted/20 flex items-center justify-center relative group">
                 <video
+                  ref={beforeVideoRef}
                   id="before-video"
                   className="w-full h-full object-cover"
                   playsInline
                   muted
-                  autoPlay
                   loop
                   preload="metadata"
                   poster="/placeholder.svg"
@@ -35,6 +65,14 @@ const BeforeAfterDemo = () => {
                   <source src="/videos/before.mp4" type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full w-14 h-14 opacity-90 hover:opacity-100 shadow-lg"
+                  onClick={toggleBeforeVideo}
+                >
+                  {isBeforePlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-0.5" />}
+                </Button>
               </div>
             </Card>
           </div>
@@ -54,11 +92,11 @@ const BeforeAfterDemo = () => {
             <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border-2 border-primary/50 hover:border-primary transition-all duration-300 shadow-[0_0_30px_rgba(var(--primary),0.15)]">
               <div className="aspect-[9/16] bg-muted/20 flex items-center justify-center relative group">
                 <video
+                  ref={afterVideoRef}
                   id="after-video"
                   className="w-full h-full object-cover"
                   playsInline
                   muted
-                  autoPlay
                   loop
                   preload="metadata"
                   poster="/placeholder.svg"
@@ -67,6 +105,14 @@ const BeforeAfterDemo = () => {
                   <source src="/videos/after.mp4" type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full w-14 h-14 opacity-90 hover:opacity-100 shadow-lg"
+                  onClick={toggleAfterVideo}
+                >
+                  {isAfterPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-0.5" />}
+                </Button>
               </div>
             </Card>
           </div>

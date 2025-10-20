@@ -8,26 +8,26 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Premium light theme - Professional & Minimalist */
-    --background: 0 0% 100%;
+    /* Premium light theme - Professional & Minimalist with softer whites */
+    --background: 240 5% 98%;
     --foreground: 240 10% 4%;
 
-    --card: 0 0% 100%;
+    --card: 0 0% 99%;
     --card-foreground: 240 10% 4%;
 
-    --popover: 0 0% 100%;
+    --popover: 0 0% 99%;
     --popover-foreground: 240 10% 4%;
 
     --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 5% 96%;
+    --secondary: 240 4% 95%;
     --secondary-foreground: 240 10% 4%;
 
-    --muted: 240 5% 96%;
+    --muted: 240 4% 94%;
     --muted-foreground: 240 4% 46%;
 
-    --accent: 240 5% 96%;
+    --accent: 240 4% 95%;
     --accent-foreground: 240 10% 4%;
 
     --destructive: 0 84% 60%;
@@ -40,12 +40,12 @@ All colors MUST be HSL.
     --radius: 0.75rem;
 
     /* Glass morphism effects - light version */
-    --glass-bg: 0 0% 100% / 0.8;
+    --glass-bg: 0 0% 99% / 0.8;
     --glass-border: 240 6% 90% / 0.5;
 
     /* Gradients - subtle and professional */
     --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%), hsl(250 100% 65%));
-    --gradient-hero: linear-gradient(180deg, hsl(0 0% 100%), hsl(240 5% 98%));
+    --gradient-hero: linear-gradient(180deg, hsl(240 5% 98%), hsl(240 4% 96%));
 
     /* Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
