@@ -126,11 +126,14 @@ const Index = () => {
     setCurrentVideoId(videoId);
     setVideoStatus('processing');
 
-    // Call placeholder API to start processing
+    // Call API to start processing
     try {
       await supabase.functions.invoke('start-processing', {
         body: { video_id: videoId },
       });
+      
+      // Redirect to dashboard to show progress
+      window.location.href = '/dashboard';
     } catch (error) {
       console.error('Error starting processing:', error);
     }
@@ -186,8 +189,7 @@ const Index = () => {
       {/* Footer */}
       <Footer />
 
-      {/* Loading Screen */}
-      {videoStatus === 'processing' && <LoadingScreen />}
+      {/* Removed full-screen loading - now shows on Dashboard */}
 
       {/* Auth Modal */}
       <AuthModal

@@ -247,7 +247,7 @@ const getStatusBadge = (status: string) => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {videos.map((video) => (
                   <div key={video.id} className="glass-card rounded-2xl overflow-hidden group hover-scale">
-                    {/* Video Thumbnail */}
+                     {/* Video Thumbnail */}
                     <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-secondary/20">
 {(['completed','done'].includes(video.status)) && thumbnails[video.id] ? (
                         <video
@@ -263,6 +263,14 @@ const getStatusBadge = (status: string) => {
                             try { e.currentTarget.play(); } catch {}
                           }}
                         />
+                      ) : video.status === 'processing' ? (
+                        <div className="flex flex-col items-center justify-center h-full space-y-3">
+                          <FileVideo className="w-12 h-12 text-primary animate-pulse" />
+                          <div className="text-center px-4">
+                            <p className="text-sm font-medium">Processing...</p>
+                            <p className="text-xs text-muted-foreground mt-1">Adding watermarks to your video</p>
+                          </div>
+                        </div>
                       ) : (
                         <div className="flex items-center justify-center h-full">
                           <FileVideo className="w-16 h-16 text-muted-foreground" />

@@ -12,12 +12,11 @@ const pricingPlans = [
     name: "Free",
     price: "$0",
     period: "forever",
-    description: "Perfect for trying out our service",
+    description: "Perfect for trying out SoraStamp",
     features: [
       "5 videos per month",
-      "Basic watermark options",
-      "Standard processing speed",
-      "Email support",
+      "All features included",
+      "100MB max file size",
     ],
     videoLimit: 5,
     highlighted: false,
@@ -27,14 +26,11 @@ const pricingPlans = [
     name: "Starter",
     price: "$5",
     period: "month",
-    description: "Ideal for casual users",
+    description: "Great for regular users",
     features: [
       "25 videos per month",
       "All features included",
       "250MB max file size",
-      "Fast processing",
-      "HD video quality",
-      "Custom watermark options",
     ],
     videoLimit: 25,
     highlighted: false,
@@ -44,14 +40,11 @@ const pricingPlans = [
     name: "Pro",
     price: "$9",
     period: "month",
-    description: "Great for content creators",
+    description: "For content creators",
     features: [
       "100 videos per month",
       "All features included",
       "500MB max file size",
-      "Priority processing",
-      "HD video quality",
-      "Custom watermark options",
     ],
     videoLimit: 100,
     highlighted: false,
@@ -61,16 +54,13 @@ const pricingPlans = [
     name: "Unlimited",
     price: "$29",
     period: "month",
-    description: "For professional video creators",
+    description: "For power users",
     features: [
       "Unlimited videos (500/month)",
       "Everything in Pro",
-      "Custom watermark logo upload",
       "1GB max file size",
       "Ultra-fast processing",
       "Priority support",
-      "4K video quality",
-      "API access",
     ],
     videoLimit: 500,
     highlighted: true,
@@ -115,7 +105,6 @@ export default function Pricing() {
       setUser(user);
 
       if (user) {
-        // Normalize free tier to 5 videos on the backend
         await supabase.functions.invoke('sync-subscription');
 
         const { data: subscription } = await supabase
