@@ -51,15 +51,6 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining }:
       return;
     }
 
-    if (videosRemaining <= 0) {
-      toast({
-        title: 'Upload limit reached',
-        description: 'Upgrade to Pro for unlimited videos',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     // Validate file type
     if (!file.type.startsWith('video/')) {
       toast({
@@ -84,6 +75,20 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining }:
     setProgress(0);
 
     try {
+      // Check and decrement quota atomically using secure function
+      const { data: hasQuota, error: quotaError } = await supabase.rpc('decrement_videos_remaining', {
+        p_user_id: user.id
+      });
+
+      if (quotaError || !hasQuota) {
+        toast({
+          title: 'Upload limit reached',
+          description: 'Upgrade to Pro for unlimited videos',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const timestamp = Date.now();
       const storagePath = `${user.id}/${timestamp}_${file.name}`;
 
@@ -123,12 +128,6 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining }:
         .single();
 
       if (dbError) throw dbError;
-
-      // Update remaining videos count
-      await supabase
-        .from('user_subscriptions')
-        .update({ videos_remaining: videosRemaining - 1 })
-        .eq('user_id', user.id);
 
       toast({
         title: 'Upload successful!',
