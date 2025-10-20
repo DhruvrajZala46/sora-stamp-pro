@@ -169,15 +169,15 @@ async function handleSubscriptionActive(supabase: any, polarAccessToken: string,
   if (productId === '0dfb8146-7505-4dc9-b7ce-a669919533b2') {
     plan = 'pro';
     videosRemaining = 100;
-    maxFileSizeMb = 500;
+    maxFileSizeMb = 300;
   } else if (productId === '240aaa37-f58b-4f9c-93ae-e0df52f0644c') {
     plan = 'unlimited';
     videosRemaining = 500;
-    maxFileSizeMb = 1000;
+    maxFileSizeMb = 500;
   } else if (productId === '95d38e1c-8f47-4048-b3e3-f06edc38b8d9') {
     plan = 'starter';
     videosRemaining = 25;
-    maxFileSizeMb = 250;
+    maxFileSizeMb = 100;
   }
 
   console.log(`Setting plan to ${plan} with ${videosRemaining} videos and ${maxFileSizeMb}MB limit for user ${profile.id}`);

@@ -30,7 +30,7 @@ const pricingPlans = [
     features: [
       "25 videos per month",
       "All features included",
-      "250MB max file size",
+      "100MB max file size",
     ],
     videoLimit: 25,
     highlighted: false,
@@ -44,7 +44,7 @@ const pricingPlans = [
     features: [
       "100 videos per month",
       "All features included",
-      "500MB max file size",
+      "300MB max file size",
     ],
     videoLimit: 100,
     highlighted: false,
@@ -58,7 +58,7 @@ const pricingPlans = [
     features: [
       "Unlimited videos (500/month)",
       "Everything in Pro",
-      "1GB max file size",
+      "500MB max file size",
       "Ultra-fast processing",
       "Priority support",
     ],

@@ -39,7 +39,7 @@ serve(async (req) => {
 
     // Validate input
     const ValidationSchema = z.object({
-      fileSize: z.number().positive().max(1024 * 1024 * 1024 * 2), // Max 2GB
+      fileSize: z.number().positive().max(1024 * 1024 * 500), // Max 500MB (highest plan limit)
       fileType: z.string().regex(/^video\//)
     });
 

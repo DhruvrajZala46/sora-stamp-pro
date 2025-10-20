@@ -105,9 +105,9 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, m
         } else if (reason === 'file_too_large') {
           const maxSize = validation?.maxSizeMb || maxFileSizeMb;
           const plan = validation?.plan || currentPlan;
-          const upgradePlan = plan === 'free' ? 'Starter ($5/mo) for 250MB' : 
-                              plan === 'starter' ? 'Pro ($9/mo) for 500MB' : 
-                              plan === 'pro' ? 'Unlimited ($29/mo) for 1GB' : 
+          const upgradePlan = plan === 'free' ? 'Starter ($5/mo)' : 
+                              plan === 'starter' ? 'Pro ($9/mo) for 300MB' : 
+                              plan === 'pro' ? 'Unlimited ($29/mo) for 500MB' : 
                               'a higher plan';
           
           toast({
