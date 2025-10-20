@@ -5,12 +5,37 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { z } from 'zod';
 
 interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 }
+
+// Client-side password hardening (mitigation when backend leaked-password check is off)
+const COMMON_PASSWORDS = new Set([
+  'password','123456','123456789','qwerty','12345678','111111','123123','abc123','password1','iloveyou',
+  'admin','letmein','welcome','monkey','dragon','football','baseball','sunshine','trustno1','qwerty123'
+]);
+
+const validatePassword = (email: string, password: string) => {
+  const schema = z
+    .string()
+    .min(12, 'Use at least 12 characters')
+    .max(72, 'Use at most 72 characters')
+    .regex(/[A-Z]/, 'Add an uppercase letter')
+    .regex(/[a-z]/, 'Add a lowercase letter')
+    .regex(/[0-9]/, 'Add a number')
+    .regex(/[^A-Za-z0-9]/, 'Add a symbol')
+    .refine((p) => !COMMON_PASSWORDS.has(p.toLowerCase()), 'Password is too common')
+    .refine((p) => {
+      const local = (email.split('@')[0] || '').toLowerCase();
+      return local ? !p.toLowerCase().includes(local) : true;
+    }, 'Avoid using your email in the password');
+
+  return schema.safeParse(password);
+};
 
 const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -29,6 +54,17 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
         if (error) throw error;
         toast({ title: 'Welcome back!', description: 'You have successfully signed in.' });
       } else {
+        // Client-side validation before signup
+        const emailCheck = z.string().email('Enter a valid email').max(255, 'Email too long').safeParse(email);
+        if (!emailCheck.success) {
+          throw new Error(emailCheck.error.issues[0]?.message || 'Invalid email');
+        }
+
+        const pwdCheck = validatePassword(email, password);
+        if (!pwdCheck.success) {
+          throw new Error(pwdCheck.error.issues[0]?.message || 'Weak password');
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -83,7 +119,7 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={6}
+              minLength={12}
               className="bg-background/50"
             />
           </div>
