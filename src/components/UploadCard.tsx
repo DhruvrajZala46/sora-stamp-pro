@@ -80,8 +80,8 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, m
     // Validate file type
     if (!file.type.startsWith('video/')) {
       toast({
-        title: 'Invalid file type',
-        description: 'Please upload a video file (MP4, WebM, etc.)',
+        title: '📹 Invalid File Type',
+        description: 'Please select a video file. Supported formats: MP4, WebM, MOV, AVI, and more.',
         variant: 'destructive',
       });
       return;
@@ -106,29 +106,61 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, m
         const reason = validation?.reason || 'unknown';
         
         if (reason === 'quota_exceeded') {
+          const plan = validation?.plan || currentPlan;
+          const planLimit = plan === 'free' ? '5 videos' : 
+                           plan === 'starter' ? '25 videos' : 
+                           plan === 'pro' ? '100 videos' : 
+                           '500 videos';
+          
           toast({
-            title: 'Upload limit reached',
-            description: 'Upgrade to Pro for unlimited videos',
+            title: '🎬 Monthly Video Limit Reached',
+            description: `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan allows ${planLimit} per month. Upgrade now for more videos!`,
             variant: 'destructive',
+            action: (
+              <button
+                onClick={() => window.location.href = '/pricing'}
+                className="px-3 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+              >
+                View Plans
+              </button>
+            ),
           });
+          setTimeout(() => window.location.href = '/pricing', 3000);
         } else if (reason === 'file_too_large') {
           const maxSize = validation?.maxSizeMb || maxFileSizeMb;
           const plan = validation?.plan || currentPlan;
-          const upgradePlan = plan === 'free' ? 'Starter ($5/mo)' : 
-                              plan === 'starter' ? 'Pro ($9/mo) for 300MB' : 
-                              plan === 'pro' ? 'Unlimited ($29/mo) for 500MB' : 
-                              'a higher plan';
+          const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+          
+          const upgradeInfo = plan === 'free' || plan === 'starter' 
+            ? { plan: 'Pro', price: '$9/mo', size: '300MB' }
+            : { plan: 'Unlimited', price: '$29/mo', size: '500MB' };
           
           toast({
-            title: 'File too large',
-            description: `Your plan allows up to ${maxSize}MB. Upgrade to ${upgradePlan} for larger files.`,
+            title: '📁 File Size Limit Exceeded',
+            description: `Your file is ${fileSizeMB}MB. Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan supports up to ${maxSize}MB. Upgrade to ${upgradeInfo.plan} (${upgradeInfo.price}) for ${upgradeInfo.size} files.`,
             variant: 'destructive',
+            action: (
+              <button
+                onClick={() => window.location.href = '/pricing'}
+                className="px-3 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+              >
+                Upgrade Now
+              </button>
+            ),
           });
         } else {
           toast({
-            title: 'Upload validation failed',
-            description: 'Please try again or contact support',
+            title: '⚠️ Upload Not Allowed',
+            description: 'This upload cannot be processed. Please check your plan limits or contact support for assistance.',
             variant: 'destructive',
+            action: (
+              <button
+                onClick={() => window.location.href = '/pricing'}
+                className="px-3 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+              >
+                Check Plans
+              </button>
+            ),
           });
         }
         return;
@@ -140,11 +172,25 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, m
       });
 
       if (quotaError || !hasQuota) {
+        const planLimit = currentPlan === 'free' ? '5 videos' : 
+                         currentPlan === 'starter' ? '25 videos' : 
+                         currentPlan === 'pro' ? '100 videos' : 
+                         '500 videos';
+        
         toast({
-          title: 'Upload limit reached',
-          description: 'Upgrade to Pro for unlimited videos',
+          title: '🎬 Monthly Video Limit Reached',
+          description: `You've used all ${planLimit} in your ${currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)} plan this month. Upgrade to continue creating!`,
           variant: 'destructive',
+          action: (
+            <button
+              onClick={() => window.location.href = '/pricing'}
+              className="px-3 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+            >
+              Upgrade Plan
+            </button>
+          ),
         });
+        setTimeout(() => window.location.href = '/pricing', 3000);
         return;
       }
 
@@ -196,9 +242,10 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, m
 
       onUploadComplete(videoData.id);
     } catch (error) {
+      console.error('Upload error:', error);
       toast({
-        title: 'Upload failed',
-        description: 'An error occurred during upload. Please try again.',
+        title: '❌ Upload Failed',
+        description: 'We encountered an error while uploading your video. Please check your internet connection and try again. If the issue persists, contact support.',
         variant: 'destructive',
       });
     } finally {

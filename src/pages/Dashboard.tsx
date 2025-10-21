@@ -75,7 +75,7 @@ const Dashboard = () => {
       .range(from, to);
 
     if (error) {
-      toast.error('Failed to load videos');
+      toast.error('Unable to load your videos. Please refresh the page or contact support if the issue persists.');
     } else {
       setVideos(data || []);
       setTotalCount(count || 0);
@@ -125,7 +125,7 @@ const Dashboard = () => {
 
   const handleDownload = async (video: Video) => {
     if (!video.processed_path) {
-      toast.error('Video is not ready for download');
+      toast.error('⏳ Video Still Processing - Your video is being watermarked and will be ready for download shortly. Please check back in a few moments.');
       return;
     }
 
@@ -137,9 +137,9 @@ const Dashboard = () => {
       if (error) throw error;
 
       window.open(data.signedUrl, '_blank');
-      toast.success('Download started');
+      toast.success('✅ Download Started - Your watermarked video is now downloading!');
     } catch (error) {
-      toast.error('Unable to download video');
+      toast.error('❌ Download Failed - Unable to download your video. Please try again or contact support.');
     }
   };
 
@@ -170,17 +170,17 @@ const Dashboard = () => {
         await supabase.storage.from('processed').remove([video.processed_path]);
       }
 
-      toast.success('Video deleted successfully');
+      toast.success('✅ Video Deleted - Your video has been permanently removed from your account.');
       setDeleteVideo(null);
       fetchVideos(currentPage);
     } catch (error) {
-      toast.error('Failed to delete video');
+      toast.error('❌ Delete Failed - Unable to delete your video. Please try again or contact support.');
     }
   };
 
   const handleShare = async (video: Video) => {
     if (!video.processed_path) {
-      toast.error('Video is not ready for sharing');
+      toast.error('⏳ Video Still Processing - Your video is being watermarked and will be ready for sharing shortly.');
       return;
     }
 
@@ -192,9 +192,9 @@ const Dashboard = () => {
       if (error) throw error;
 
       await navigator.clipboard.writeText(data.signedUrl);
-      toast.success('Share link copied to clipboard');
+      toast.success('🔗 Share Link Copied - The link to your watermarked video has been copied to your clipboard!');
     } catch (error) {
-      toast.error('Unable to share video');
+      toast.error('❌ Share Failed - Unable to generate a share link. Please try again or contact support.');
     }
   };
 

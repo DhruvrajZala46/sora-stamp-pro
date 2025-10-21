@@ -126,13 +126,13 @@ export default function Pricing() {
 
   const handleUpgrade = async (plan: any) => {
     if (!user) {
-      toast.error("Please sign in to upgrade");
+      toast.error("🔐 Sign In Required - Please sign in to your account to upgrade your plan.");
       navigate('/auth');
       return;
     }
 
     if (!('productId' in plan) || !plan.productId) {
-      toast.info("You're already on the free plan");
+      toast.info("ℹ️ You're Already on the Free Plan - Select a paid plan above to unlock more features!");
       return;
     }
 
@@ -145,7 +145,7 @@ export default function Pricing() {
       window.location.href = data.url;
     } catch (err: any) {
       console.error('Checkout error:', err);
-      toast.error("Failed to start checkout. Please try again.");
+      toast.error("❌ Checkout Failed - Unable to start the checkout process. Please try again or contact support.");
     } finally {
       setLoading(false);
     }
