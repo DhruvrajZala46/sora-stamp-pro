@@ -74,30 +74,30 @@ serve(async (req) => {
       });
     }
 
-    // If user is on free plan and has less than 5 videos, normalize to 5
-    if (currentSub.plan === 'free' && currentSub.videos_remaining < 5) {
-      const { error: updateError } = await supabase
-        .from('user_subscriptions')
-        .update({ 
-          videos_remaining: 5, 
-          updated_at: new Date().toISOString() 
-        })
-        .eq('user_id', user.id);
+    // // If user is on free plan and has less than 5 videos, normalize to 5
+    // if (currentSub.plan === 'free' && currentSub.videos_remaining < 5) {
+    //   const { error: updateError } = await supabase
+    //     .from('user_subscriptions')
+    //     .update({ 
+    //       videos_remaining: 5, 
+    //       updated_at: new Date().toISOString() 
+    //     })
+    //     .eq('user_id', user.id);
 
-      if (updateError) {
-        console.error('Error normalizing subscription:', updateError);
-        return new Response(JSON.stringify({ ok: false, error: updateError.message }), { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        });
-      }
+    //   if (updateError) {
+    //     console.error('Error normalizing subscription:', updateError);
+    //     return new Response(JSON.stringify({ ok: false, error: updateError.message }), { 
+    //       status: 500, 
+    //       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    //     });
+    //   }
 
-      console.log('Normalized free plan videos for user:', user.id);
-      return new Response(JSON.stringify({ ok: true, normalized: true }), { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      });
-    }
+    //   console.log('Normalized free plan videos for user:', user.id);
+    //   return new Response(JSON.stringify({ ok: true, normalized: true }), { 
+    //     status: 200, 
+    //     headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    //   });
+    // }
 
     return new Response(JSON.stringify({ ok: true, unchanged: true }), { 
       status: 200, 
