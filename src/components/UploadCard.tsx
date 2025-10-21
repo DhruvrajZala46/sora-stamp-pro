@@ -64,14 +64,15 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, m
 
   const handleFile = async (file: File) => {
     if (!user) {
+      // Force a full redirect to the dedicated Auth page (avoid any modals)
+      if (typeof window !== 'undefined') {
+        window.location.replace('/auth');
+      }
+      // Also call the callback for any parent-side cleanup, but after scheduling redirect
       try {
         onAuthRequired();
-      } catch (e) {
+      } catch (_) {
         // no-op
-      }
-      // Hard redirect fallback to ensure we always land on the official auth page
-      if (typeof window !== 'undefined') {
-        window.location.href = '/auth';
       }
       return;
     }
@@ -238,7 +239,15 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, m
             Drag and drop or click to select
           </p>
           <Button
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => {
+              if (!user) {
+                if (typeof window !== 'undefined') {
+                  window.location.replace('/auth');
+                }
+                return;
+              }
+              fileInputRef.current?.click();
+            }}
             className="btn-hero"
           >
             Select Video
