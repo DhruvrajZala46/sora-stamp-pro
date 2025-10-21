@@ -35,7 +35,7 @@ serve(async (req) => {
     // Fetch current subscription
     const { data: currentSub, error: fetchError } = await supabase
       .from('user_subscriptions')
-      .select('plan, videos_remaining')
+      .select('plan, videos_remaining, created_at')
       .eq('user_id', user.id)
       .maybeSingle();
 
@@ -47,31 +47,45 @@ serve(async (req) => {
       });
     }
 
-    // If no subscription exists, create one with free plan
     if (!currentSub) {
-      const { error: insertError } = await supabase
-        .from('user_subscriptions')
-        .insert({
-          user_id: user.id,
-          plan: 'free',
-          videos_remaining: 5,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
+      const { data: authUser } = await supabase.auth.admin.getUserById(user.id);
+      const userCreatedAt = new Date(authUser?.user?.created_at || 0);
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      if (userCreatedAt > fiveMinutesAgo) {
+        const { error: insertError } = await supabase
+          .from('user_subscriptions')
+          .insert({
+            user_id: user.id,
+            plan: 'free',
+            videos_remaining: 5,
+            max_file_size_mb: 100,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
 
-      if (insertError) {
-        console.error('Error creating subscription:', insertError);
-        return new Response(JSON.stringify({ ok: false, error: insertError.message }), { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        if (insertError) {
+          if (insertError.code === '23505') {
+            return new Response(JSON.stringify({ ok: true, note: 'already_exists' }), {
+              status: 200,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+          }
+          return new Response(JSON.stringify({ ok: false, error: insertError.message }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        return new Response(JSON.stringify({ ok: true, created: true }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      } else {
+        console.error('⚠️ User has no subscription but is not new:', user.id);
+        return new Response(JSON.stringify({ ok: false, error: 'Subscription not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
-
-      console.log('Created free subscription for user:', user.id);
-      return new Response(JSON.stringify({ ok: true, created: true }), { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      });
     }
 
 

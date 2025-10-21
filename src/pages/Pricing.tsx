@@ -81,11 +81,16 @@ export default function Pricing() {
     const status = params.get('status');
     const checkoutId = params.get('checkout_id');
 
+    // ONLY sync after successful payment
     if (status === 'success' && checkoutId) {
       toast.success("Payment successful! Activating your subscription...");
-      supabase.functions.invoke('sync-subscription').finally(() => {
-        checkAuth();
-      });
+      setTimeout(async () => {
+        try {
+          await supabase.functions.invoke('sync-subscription');
+        } finally {
+          checkAuth();
+        }
+      }, 5000);
     } else if (status === 'cancelled') {
       toast.info("Checkout canceled.");
     }
