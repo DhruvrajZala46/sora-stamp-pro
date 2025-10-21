@@ -105,7 +105,6 @@ export default function Pricing() {
       setUser(user);
 
       if (user) {
-        await supabase.functions.invoke('sync-subscription');
 
         const { data: subscription } = await supabase
           .from('user_subscriptions')

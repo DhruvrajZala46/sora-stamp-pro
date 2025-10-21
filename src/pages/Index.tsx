@@ -14,7 +14,7 @@ const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [plan, setPlan] = useState('free');
-  const [videosRemaining, setVideosRemaining] = useState(3);
+  const [videosRemaining, setVideosRemaining] = useState(5);
   const [maxFileSizeMb, setMaxFileSizeMb] = useState(100);
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
   const [videoStatus, setVideoStatus] = useState<string>('');
@@ -119,7 +119,7 @@ const Index = () => {
     await supabase.auth.signOut();
     setUser(null);
     setPlan('free');
-    setVideosRemaining(3);
+    setVideosRemaining(5);
   };
 
   const handleUploadComplete = async (videoId: string) => {

@@ -62,7 +62,11 @@ BEGIN
   ON CONFLICT (user_id) 
   DO UPDATE SET
     plan = EXCLUDED.plan,
-    videos_remaining = EXCLUDED.videos_remaining,
+    videos_remaining = 
+      CASE 
+        WHEN user_subscriptions.plan != EXCLUDED.plan THEN EXCLUDED.videos_remaining
+        ELSE user_subscriptions.videos_remaining
+      END,
     max_file_size_mb = EXCLUDED.max_file_size_mb,
     updated_at = NOW();
 
