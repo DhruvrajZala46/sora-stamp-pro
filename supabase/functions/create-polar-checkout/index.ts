@@ -20,7 +20,7 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const accessToken = Deno.env.get('POLAR_ACCESS_TOKEN')!;
-    const server = Deno.env.get('POLAR_ENVIRONMENT') ?? 'sandbox';
+    const server = Deno.env.get('POLAR_ENVIRONMENT') ?? 'production';
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
