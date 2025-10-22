@@ -319,18 +319,24 @@ async function handleSubscriptionCanceled(supabase: any, polarAccessToken: strin
     throw new Error('Audit insert failed');
   }
 
-  const subPayload = {
-    plan: 'free',
-    videos_remaining: 5,
-    max_file_size_mb: 100,
-    updated_at: new Date().toISOString(),
-  };
-
+  // Determine safe downgrade payload: never increase free credits if already on free plan
   const { data: existingSub } = await supabase
     .from('user_subscriptions')
-    .select('id')
+    .select('id, plan, videos_remaining')
     .eq('user_id', profile.id)
     .maybeSingle();
+
+  const basePayload = {
+    plan: 'free',
+    max_file_size_mb: 100,
+    updated_at: new Date().toISOString(),
+  } as const;
+
+  // If user already on free plan, do NOT touch videos_remaining (prevents unintended resets)
+  // If downgrading from paid -> free, initialize free credits to 5
+  const subPayload = (existingSub && existingSub.plan === 'free')
+    ? { ...basePayload } // keep existing videos_remaining
+    : { ...basePayload, videos_remaining: 5 };
 
   if (existingSub) {
     const { error: updErr } = await supabase
