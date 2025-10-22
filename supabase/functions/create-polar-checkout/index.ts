@@ -47,11 +47,10 @@ serve(async (req) => {
 
     const { productId, redirectOrigin } = body;
 
-    // Allow only known product IDs for safety
+    // Allow only known product IDs for safety (production)
     const allowed = new Set([
-      '0dfb8146-7505-4dc9-b7ce-a669919533b2', // Pro
-      '240aaa37-f58b-4f9c-93ae-e0df52f0644c', // Unlimited
-      '95d38e1c-8f47-4048-b3e3-f06edc38b8d9', // Starter
+      'ac8d117a-b873-438c-9ff4-61c07e06e12f', // Pro
+      '90f865c2-acd3-4cd1-a085-524124e54f1f', // Unlimited
     ]);
     if (!allowed.has(productId)) {
       return new Response(JSON.stringify({ error: 'Invalid productId' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });

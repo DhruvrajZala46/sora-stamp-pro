@@ -26,7 +26,7 @@ const pricingPlans = [
     name: "Starter",
     price: "$5",
     period: "month",
-    description: "Great for regular users",
+    description: "Temporarily unavailable",
     features: [
       "25 videos per month",
       "All features included",
@@ -34,7 +34,7 @@ const pricingPlans = [
     ],
     videoLimit: 25,
     highlighted: false,
-    productId: "95d38e1c-8f47-4048-b3e3-f06edc38b8d9",
+    disabled: true,
   },
   {
     name: "Pro",
@@ -48,7 +48,7 @@ const pricingPlans = [
     ],
     videoLimit: 100,
     highlighted: false,
-    productId: "0dfb8146-7505-4dc9-b7ce-a669919533b2",
+    productId: "ac8d117a-b873-438c-9ff4-61c07e06e12f",
   },
   {
     name: "Unlimited",
@@ -64,7 +64,7 @@ const pricingPlans = [
     ],
     videoLimit: 500,
     highlighted: true,
-    productId: "240aaa37-f58b-4f9c-93ae-e0df52f0644c",
+    productId: "90f865c2-acd3-4cd1-a085-524124e54f1f",
   },
 ];
 
@@ -132,6 +132,11 @@ export default function Pricing() {
     if (!user) {
       toast.error("🔐 Sign In Required - Please sign in to your account to upgrade your plan.");
       navigate('/auth');
+      return;
+    }
+
+    if (plan.disabled) {
+      toast.info("This plan is temporarily unavailable. Please choose another plan.");
       return;
     }
 
@@ -209,14 +214,16 @@ export default function Pricing() {
 
               <Button
                 onClick={() => handleUpgrade(plan)}
-                disabled={loading || currentPlan === plan.name.toLowerCase()}
+                disabled={loading || currentPlan === plan.name.toLowerCase() || plan.disabled}
                 className={`w-full ${
                   plan.highlighted
                     ? 'bg-primary hover:bg-primary/90'
                     : 'bg-secondary hover:bg-secondary/90'
                 }`}
               >
-                {currentPlan === plan.name.toLowerCase()
+                {plan.disabled
+                  ? 'Temporarily Unavailable'
+                  : currentPlan === plan.name.toLowerCase()
                   ? 'Current Plan'
                   : 'Upgrade Now'}
               </Button>
