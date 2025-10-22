@@ -49,8 +49,8 @@ serve(async (req) => {
 
     // Allow only known product IDs for safety (production)
     const allowed = new Set([
-      'ac8d117a-b873-438c-9ff4-61c07e06e12f', // Pro
-      '90f865c2-acd3-4cd1-a085-524124e54f1f', // Unlimited
+      'bfd8ca13-0f7e-4eea-a6fb-57cdb2fadda8', // Pro
+      '2725157f-517b-4afc-85b2-54134f0b97bd', // Unlimited
     ]);
     if (!allowed.has(productId)) {
       return new Response(JSON.stringify({ error: 'Invalid productId' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });

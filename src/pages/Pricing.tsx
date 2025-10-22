@@ -48,7 +48,7 @@ const pricingPlans = [
     ],
     videoLimit: 100,
     highlighted: false,
-    productId: "ac8d117a-b873-438c-9ff4-61c07e06e12f",
+    productId: "bfd8ca13-0f7e-4eea-a6fb-57cdb2fadda8",
   },
   {
     name: "Unlimited",
@@ -64,7 +64,7 @@ const pricingPlans = [
     ],
     videoLimit: 500,
     highlighted: true,
-    productId: "90f865c2-acd3-4cd1-a085-524124e54f1f",
+    productId: "2725157f-517b-4afc-85b2-54134f0b97bd",
   },
 ];
 
