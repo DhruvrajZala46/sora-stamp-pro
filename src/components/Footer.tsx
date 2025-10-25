@@ -1,12 +1,70 @@
 import { Link } from "react-router-dom";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+
+const feedbackSchema = z.object({
+  email: z.string().trim().email({ message: "Please enter a valid email address" }).max(255),
+  message: z.string().trim().min(10, { message: "Message must be at least 10 characters" }).max(1000, { message: "Message must be less than 1000 characters" })
+});
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const { toast } = useToast();
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const validated = feedbackSchema.parse({ email, message });
+      setIsSubmitting(true);
+
+      const { error } = await supabase
+        .from("feedback_submissions")
+        .insert({
+          email: validated.email,
+          message: validated.message,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Thank you for your feedback!",
+        description: "We've received your message and will review it soon.",
+      });
+
+      setEmail("");
+      setMessage("");
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Invalid input",
+          description: error.errors[0].message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to submit feedback. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <footer className="relative z-10 w-full border-t border-border/50 bg-background/30 backdrop-blur-sm mt-20">
       <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
           {/* Brand Section */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
@@ -93,58 +151,39 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Company Links */}
+          {/* Feedback Form */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-sm uppercase tracking-wider">Company</h3>
-            <ul className="space-y-3 text-sm">
-              <li>
-                <a href="#about" className="text-muted-foreground hover:text-primary transition-colors">
-                  About Us
-                </a>
-              </li>
-              <li>
-                <a href="#blog" className="text-muted-foreground hover:text-primary transition-colors">
-                  Blog
-                </a>
-              </li>
-              <li>
-                <a href="#careers" className="text-muted-foreground hover:text-primary transition-colors">
-                  Careers
-                </a>
-              </li>
-              <li>
-                <a href="#contact" className="text-muted-foreground hover:text-primary transition-colors">
-                  Contact
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Legal & Contact */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-sm uppercase tracking-wider">Support</h3>
-            <ul className="space-y-3 text-sm">
-              <li>
-                <a href="#help" className="text-muted-foreground hover:text-primary transition-colors">
-                  Help Center
-                </a>
-              </li>
-              <li>
-                <a href="#privacy" className="text-muted-foreground hover:text-primary transition-colors">
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="#terms" className="text-muted-foreground hover:text-primary transition-colors">
-                  Terms of Service
-                </a>
-              </li>
-              <li>
-                <a href="mailto:support@sorastamp.com" className="text-muted-foreground hover:text-primary transition-colors">
-                  support@sorastamp.com
-                </a>
-              </li>
-            </ul>
+            <h3 className="font-semibold text-sm uppercase tracking-wider">Share Your Feedback</h3>
+            <p className="text-xs text-muted-foreground">
+              Have a concern, found a bug, or want to share feedback? Let us know and we'll work to improve your experience!
+            </p>
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <Input
+                type="email"
+                placeholder="Your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isSubmitting}
+                className="h-9 text-sm"
+              />
+              <Textarea
+                placeholder="Tell us about your experience, report a bug, or share suggestions..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                required
+                disabled={isSubmitting}
+                className="min-h-[80px] text-sm resize-none"
+              />
+              <Button 
+                type="submit" 
+                size="sm" 
+                className="w-full"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Sending..." : "Submit Feedback"}
+              </Button>
+            </form>
           </div>
         </div>
 
