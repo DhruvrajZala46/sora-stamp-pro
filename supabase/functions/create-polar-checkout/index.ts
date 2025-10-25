@@ -49,6 +49,7 @@ serve(async (req) => {
 
     // Allow only known product IDs for safety (production)
     const allowed = new Set([
+      '0930b6f7-4055-44a3-91e6-ea40d9da89a0', // Starter
       'bfd8ca13-0f7e-4eea-a6fb-57cdb2fadda8', // Pro
       '2725157f-517b-4afc-85b2-54134f0b97bd', // Unlimited
     ]);

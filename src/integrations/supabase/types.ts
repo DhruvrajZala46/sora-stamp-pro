@@ -161,10 +161,7 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: boolean
       }
-      get_user_file_size_limit: {
-        Args: { p_user_id: string }
-        Returns: number
-      }
+      get_user_file_size_limit: { Args: { p_user_id: string }; Returns: number }
       update_subscription_from_webhook: {
         Args: {
           p_event_type: string

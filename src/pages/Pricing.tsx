@@ -16,7 +16,7 @@ const pricingPlans = [
     features: [
       "5 videos per month",
       "All features included",
-      "100MB max file size",
+      "200MB max file size",
     ],
     videoLimit: 5,
     highlighted: false,
@@ -26,15 +26,15 @@ const pricingPlans = [
     name: "Starter",
     price: "$5",
     period: "month",
-    description: "Temporarily unavailable",
+    description: "Perfect for regular users",
     features: [
       "25 videos per month",
       "All features included",
-      "100MB max file size",
+      "200MB max file size",
     ],
     videoLimit: 25,
     highlighted: false,
-    disabled: true,
+    productId: "0930b6f7-4055-44a3-91e6-ea40d9da89a0",
   },
   {
     name: "Pro",
@@ -135,11 +135,6 @@ export default function Pricing() {
       return;
     }
 
-    if (plan.disabled) {
-      toast.info("This plan is temporarily unavailable. Please choose another plan.");
-      return;
-    }
-
     if (!('productId' in plan) || !plan.productId) {
       toast.info("ℹ️ You're Already on the Free Plan - Select a paid plan above to unlock more features!");
       return;
@@ -214,16 +209,14 @@ export default function Pricing() {
 
               <Button
                 onClick={() => handleUpgrade(plan)}
-                disabled={loading || currentPlan === plan.name.toLowerCase() || plan.disabled}
+                disabled={loading || currentPlan === plan.name.toLowerCase()}
                 className={`w-full ${
                   plan.highlighted
                     ? 'bg-primary hover:bg-primary/90'
                     : 'bg-secondary hover:bg-secondary/90'
                 }`}
               >
-                {plan.disabled
-                  ? 'Temporarily Unavailable'
-                  : currentPlan === plan.name.toLowerCase()
+                {currentPlan === plan.name.toLowerCase()
                   ? 'Current Plan'
                   : 'Upgrade Now'}
               </Button>

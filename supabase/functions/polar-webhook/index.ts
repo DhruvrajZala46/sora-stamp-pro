@@ -164,9 +164,13 @@ async function handleSubscriptionActive(supabase: any, polarAccessToken: string,
   const productId = subscription.product?.id || subscription.product_id || '';
   let plan = 'free';
   let videosRemaining = 5;
-  let maxFileSizeMb = 100;
+  let maxFileSizeMb = 200;
 
-  if (productId === 'bfd8ca13-0f7e-4eea-a6fb-57cdb2fadda8') {
+  if (productId === '0930b6f7-4055-44a3-91e6-ea40d9da89a0') {
+    plan = 'starter';
+    videosRemaining = 25;
+    maxFileSizeMb = 200;
+  } else if (productId === 'bfd8ca13-0f7e-4eea-a6fb-57cdb2fadda8') {
     plan = 'pro';
     videosRemaining = 100;
     maxFileSizeMb = 300;
@@ -328,7 +332,7 @@ async function handleSubscriptionCanceled(supabase: any, polarAccessToken: strin
 
   const basePayload = {
     plan: 'free',
-    max_file_size_mb: 100,
+    max_file_size_mb: 200,
     updated_at: new Date().toISOString(),
   } as const;
 
