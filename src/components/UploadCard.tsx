@@ -10,12 +10,21 @@ interface UploadCardProps {
   user: User | null;
   onAuthRequired: () => void;
   onUploadComplete: (videoId: string) => void;
-  videosRemaining: number;
+  onCreditsUpdate: () => void;
+  userCredits: number;
+  creditsCost: number;
   maxFileSizeMb: number;
-  currentPlan: string;
 }
 
-const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, maxFileSizeMb, currentPlan }: UploadCardProps) => {
+const UploadCard = ({ 
+  user, 
+  onAuthRequired, 
+  onUploadComplete, 
+  onCreditsUpdate,
+  userCredits, 
+  creditsCost, 
+  maxFileSizeMb 
+}: UploadCardProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -61,7 +70,7 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, m
   };
 
   const handleFile = async (file: File) => {
-    // 🔒 SECURITY: Auth check (preserved)
+    // Auth check
     if (!user) {
       if (typeof window !== 'undefined') {
         window.location.replace('/auth');
@@ -72,7 +81,25 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, m
       return;
     }
 
-    // 🔒 SECURITY: File type validation (preserved)
+    // Check credits before upload
+    if (userCredits < creditsCost) {
+      toast({
+        title: '💰 Insufficient Credits',
+        description: `You need ${creditsCost} credits to add a watermark. You currently have ${userCredits} credits.`,
+        variant: 'destructive',
+        action: (
+          <button
+            onClick={() => window.location.href = '/credits'}
+            className="px-3 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+          >
+            Buy Credits
+          </button>
+        ),
+      });
+      return;
+    }
+
+    // File type validation
     if (!file.type.startsWith('video/')) {
       toast({
         title: '📹 Invalid File Type',
@@ -82,123 +109,26 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, m
       return;
     }
 
+    // File size validation
+    const fileSizeMB = file.size / (1024 * 1024);
+    if (fileSizeMB > maxFileSizeMb) {
+      toast({
+        title: '📁 File Size Limit Exceeded',
+        description: `Your file is ${fileSizeMB.toFixed(1)}MB. Maximum allowed size is ${maxFileSizeMb}MB.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setUploading(true);
     setProgress(0);
 
     try {
-      // ⚡ SPEED OPTIMIZATION 1: Parallel validation + quota check
-      // Instead of: validate → then quota (slow)
-      // Now: validate AND quota at same time (fast!)
-      const [validationResult, quotaResult] = await Promise.all([
-        supabase.functions.invoke('validate-upload', {
-          body: {
-            fileSize: file.size,
-            fileType: file.type
-          }
-        }),
-        supabase.rpc('decrement_videos_remaining', {
-          p_user_id: user.id
-        })
-      ]);
-
-      const { data: validation, error: validationError } = validationResult;
-      const { data: hasQuota, error: quotaError } = quotaResult;
-
-      // 🔒 SECURITY: All validation checks preserved (same logic)
-      if (validationError || !validation?.allowed) {
-        const reason = validation?.reason || 'unknown';
-        
-        if (reason === 'quota_exceeded') {
-          const plan = validation?.plan || currentPlan;
-          const planLimit = plan === 'free' ? '5 videos' : 
-                           plan === 'starter' ? '25 videos' : 
-                           plan === 'pro' ? '100 videos' : 
-                           '500 videos';
-          
-          toast({
-            title: '🎬 Monthly Video Limit Reached',
-            description: `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan allows ${planLimit} per month. Upgrade now for more videos!`,
-            variant: 'destructive',
-            action: (
-              <button
-                onClick={() => window.location.href = '/pricing'}
-                className="px-3 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-              >
-                View Plans
-              </button>
-            ),
-          });
-          setTimeout(() => window.location.href = '/pricing', 3000);
-        } else if (reason === 'file_too_large') {
-          const maxSize = validation?.maxSizeMb || maxFileSizeMb;
-          const plan = validation?.plan || currentPlan;
-          const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
-          
-          const upgradeInfo = plan === 'free' || plan === 'starter' 
-            ? { plan: 'Pro', price: '$9/mo', size: '300MB' }
-            : { plan: 'Unlimited', price: '$29/mo', size: '500MB' };
-          
-          toast({
-            title: '📁 File Size Limit Exceeded',
-            description: `Your file is ${fileSizeMB}MB. Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan supports up to ${maxSize}MB. Upgrade to ${upgradeInfo.plan} (${upgradeInfo.price}) for ${upgradeInfo.size} files.`,
-            variant: 'destructive',
-            action: (
-              <button
-                onClick={() => window.location.href = '/pricing'}
-                className="px-3 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-              >
-                Upgrade Now
-              </button>
-            ),
-          });
-        } else {
-          toast({
-            title: '⚠️ Upload Not Allowed',
-            description: 'This upload cannot be processed. Please check your plan limits or contact support for assistance.',
-            variant: 'destructive',
-            action: (
-              <button
-                onClick={() => window.location.href = '/pricing'}
-                className="px-3 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-              >
-                Check Plans
-              </button>
-            ),
-          });
-        }
-        return;
-      }
-
-      // 🔒 SECURITY: Quota check preserved
-      if (quotaError || !hasQuota) {
-        const planLimit = currentPlan === 'free' ? '5 videos' : 
-                         currentPlan === 'starter' ? '25 videos' : 
-                         currentPlan === 'pro' ? '100 videos' : 
-                         '500 videos';
-        
-        toast({
-          title: '🎬 Monthly Video Limit Reached',
-          description: `You've used all ${planLimit} in your ${currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)} plan this month. Upgrade to continue creating!`,
-          variant: 'destructive',
-          action: (
-            <button
-              onClick={() => window.location.href = '/pricing'}
-              className="px-3 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-            >
-              Upgrade Plan
-            </button>
-          ),
-        });
-        setTimeout(() => window.location.href = '/pricing', 3000);
-        return;
-      }
-
       const timestamp = Date.now();
       const sanitizedFilename = sanitizeFilename(file.name);
       const storagePath = `${user.id}/${timestamp}_${sanitizedFilename}`;
 
-      // ⚡ SPEED OPTIMIZATION 2: Supabase handles chunking internally (faster!)
-      // Upload to storage - Supabase SDK automatically uses optimal chunk sizes
+      // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from('uploads')
         .upload(storagePath, file, {
@@ -208,9 +138,9 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, m
 
       if (uploadError) throw uploadError;
       
-      setProgress(50); // Show progress
+      setProgress(50);
 
-      // ⚡ SPEED OPTIMIZATION 3: Get duration async (doesn't block)
+      // Get video duration
       const getDurationAsync = (): Promise<number> => {
         return new Promise((resolve) => {
           const video = document.createElement('video');
@@ -225,10 +155,9 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, m
           
           video.onerror = () => {
             URL.revokeObjectURL(video.src);
-            resolve(0); // Fallback if metadata fails
+            resolve(0);
           };
           
-          // Timeout after 3 seconds
           setTimeout(() => {
             URL.revokeObjectURL(video.src);
             resolve(0);
@@ -238,10 +167,9 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, m
 
       setProgress(75);
 
-      // Start getting duration (don't block DB insert)
       const durationPromise = getDurationAsync();
 
-      // ⚡ SPEED OPTIMIZATION 4: Create DB record immediately
+      // Create DB record
       const { data: videoData, error: dbError } = await supabase
         .from('videos')
         .insert({
@@ -249,7 +177,7 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, m
           filename: file.name,
           storage_path: storagePath,
           status: 'uploaded',
-          duration_seconds: 0, // Will update in a moment
+          duration_seconds: 0,
           size_bytes: file.size,
         })
         .select()
@@ -259,7 +187,7 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, m
 
       setProgress(90);
 
-      // Wait for duration and update
+      // Update duration
       const duration = await durationPromise;
       if (duration > 0) {
         await supabase
@@ -275,14 +203,17 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, m
         description: 'Starting watermark processing...',
       });
 
-      // Start processing immediately
+      // Update credits display
+      onCreditsUpdate();
+
+      // Start processing
       onUploadComplete(videoData.id);
       
     } catch (error) {
       console.error('Upload error:', error);
       toast({
         title: '❌ Upload Failed',
-        description: 'We encountered an error while uploading your video. Please check your internet connection and try again. If the issue persists, contact support.',
+        description: 'We encountered an error while uploading your video. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -333,12 +264,13 @@ const UploadCard = ({ user, onAuthRequired, onUploadComplete, videosRemaining, m
               fileInputRef.current?.click();
             }}
             className="btn-hero"
+            disabled={userCredits < creditsCost}
           >
             Select Video
           </Button>
           {user && (
             <p className="text-sm text-muted-foreground mt-4">
-              {videosRemaining} video{videosRemaining !== 1 ? 's' : ''} remaining
+              {userCredits} credits available • Costs {creditsCost} credits
             </p>
           )}
         </>

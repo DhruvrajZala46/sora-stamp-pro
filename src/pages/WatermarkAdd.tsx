@@ -13,9 +13,11 @@ const WatermarkAdd = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [credits, setCredits] = useState(0);
+  const [creditsCost, setCreditsCost] = useState(50);
 
   useEffect(() => {
     checkAuth();
+    fetchServicePricing();
   }, []);
 
   const checkAuth = async () => {
@@ -37,6 +39,24 @@ const WatermarkAdd = () => {
 
     if (data) {
       setCredits(data.credits || 0);
+    }
+  };
+
+  const fetchServicePricing = async () => {
+    const { data } = await supabase
+      .from('service_pricing')
+      .select('credits_cost')
+      .eq('service_type', 'watermark_add')
+      .single();
+
+    if (data) {
+      setCreditsCost(data.credits_cost);
+    }
+  };
+
+  const handleCreditsUpdate = () => {
+    if (user) {
+      fetchCredits(user.id);
     }
   };
 
@@ -74,7 +94,7 @@ const WatermarkAdd = () => {
               Upload your video and add a viral Sora watermark
             </p>
             <p className="text-sm text-muted-foreground">
-              Cost: 5 credits per video • You have {credits} credits
+              Cost: {creditsCost} credits per video • You have {credits} credits
             </p>
           </div>
 
@@ -82,10 +102,19 @@ const WatermarkAdd = () => {
             user={user}
             onAuthRequired={() => navigate('/auth')}
             onUploadComplete={handleUploadComplete}
-            videosRemaining={Math.floor(credits / 5)}
+            onCreditsUpdate={handleCreditsUpdate}
+            userCredits={credits}
+            creditsCost={creditsCost}
             maxFileSizeMb={200}
-            currentPlan="credit"
           />
+
+          {credits < creditsCost && (
+            <div className="mt-6 text-center">
+              <Button onClick={() => navigate('/credits')} size="lg">
+                Buy More Credits
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 

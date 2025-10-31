@@ -13,7 +13,7 @@ const WatermarkRemove = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [credits, setCredits] = useState(0);
-  const [creditsCost, setCreditsCost] = useState(15);
+  const [creditsCost, setCreditsCost] = useState(100);
 
   useEffect(() => {
     checkAuth();

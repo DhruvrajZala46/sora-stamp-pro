@@ -85,7 +85,7 @@ serve(async (req) => {
     }
 
     // Call Kie.ai API
-    const kieResponse = await fetch('https://api.kie.ai/v1/sora-watermark-remover', {
+    const kieResponse = await fetch('https://api.kie.ai/sora-watermark-remover', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${KIE_API_KEY}`,

@@ -125,8 +125,13 @@ const Credits = () => {
             </div>
             <h1 className="text-4xl sm:text-5xl font-bold">Purchase Credits</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Buy credits to use our AI-powered services. No subscriptions, pay as you go!
+              Buy credits to use our services • No subscriptions, pay as you go!
             </p>
+            <div className="mt-6 p-4 bg-primary/10 rounded-lg inline-block">
+              <p className="text-sm text-muted-foreground mb-2">Current Pricing:</p>
+              <p className="text-lg"><strong>Add Watermark:</strong> 50 credits per video</p>
+              <p className="text-lg"><strong>Remove Watermark:</strong> 100 credits per video</p>
+            </div>
           </div>
 
           {loading ? (
@@ -170,11 +175,11 @@ const Credits = () => {
                           </div>
                           <div className="flex items-center gap-2">
                             <Check className="w-5 h-5 text-green-500" />
-                            <span className="text-sm">~{Math.floor(pkg.credits / 5)} watermark additions</span>
+                            <span className="text-sm">{Math.floor(pkg.credits / 50)} watermark additions</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <Check className="w-5 h-5 text-green-500" />
-                            <span className="text-sm">~{Math.floor(pkg.credits / 15)} watermark removals</span>
+                            <span className="text-sm">{Math.floor(pkg.credits / 100)} watermark removals</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <Check className="w-5 h-5 text-green-500" />
