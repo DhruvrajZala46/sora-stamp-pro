@@ -116,6 +116,11 @@ serve(async (req) => {
         p_description: 'Refund for failed watermark removal (createTask)'
       });
 
+      // Check if it's a Kie.ai account credit issue
+      if (createJson?.code === 402) {
+        throw new Error('Kie.ai API account has insufficient credits. Please add credits to your Kie.ai account at https://kie.ai/');
+      }
+
       throw new Error(`Kie.ai createTask error: ${errorText}`);
     }
 
