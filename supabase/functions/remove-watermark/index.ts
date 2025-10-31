@@ -84,38 +84,108 @@ serve(async (req) => {
       });
     }
 
-    // Call Kie.ai API
-    const kieResponse = await fetch('https://api.kie.ai/api/v1/sora/remove-watermark', {
+    // Create Kie.ai task
+    const createResponse = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${KIE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        video_url: videoUrl
+        model: 'sora-watermark-remover',
+        input: { video_url: videoUrl },
       }),
     });
 
-    if (!kieResponse.ok) {
-      const errorText = await kieResponse.text();
-      console.error('Kie.ai API error:', kieResponse.status, errorText);
-      
+    const createJson = await createResponse.json().catch(() => ({}));
+
+    if (!createResponse.ok || createJson?.code !== 200 || !createJson?.data?.taskId) {
+      const errorText = JSON.stringify(createJson ?? { message: 'Unknown error creating task' });
+      console.error('Kie.ai Create Task error:', createResponse.status, errorText);
+
       // Refund credits on API failure
       await supabaseAdmin.rpc('add_credits', {
         p_user_id: user.id,
         p_credits: creditsCost,
-        p_description: 'Refund for failed watermark removal'
+        p_description: 'Refund for failed watermark removal (createTask)'
       });
 
-      throw new Error(`Kie.ai API error: ${errorText}`);
+      throw new Error(`Kie.ai createTask error: ${errorText}`);
     }
 
-    const result = await kieResponse.json();
-    console.log('Watermark removal successful for user:', user.id);
+    const taskId: string = createJson.data.taskId;
+    console.log('Kie.ai task created:', taskId);
 
-    return new Response(JSON.stringify({ 
+    // Poll task status
+    const maxWaitMs = 120000; // 2 minutes
+    const intervalMs = 2000; // 2 seconds
+    const start = Date.now();
+    let finalResult: any = null;
+
+    while (Date.now() - start < maxWaitMs) {
+      const statusResponse = await fetch(`https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${encodeURIComponent(taskId)}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${KIE_API_KEY}`,
+        },
+      });
+
+      const statusJson = await statusResponse.json().catch(() => ({}));
+
+      if (!statusResponse.ok || statusJson?.code !== 200) {
+        // transient error, wait and retry
+        await new Promise((r) => setTimeout(r, intervalMs));
+        continue;
+      }
+
+      const state = statusJson?.data?.state;
+      if (state === 'success') {
+        finalResult = statusJson?.data;
+        break;
+      }
+      if (state === 'fail') {
+        const failMsg = statusJson?.data?.failMsg || 'Unknown failure';
+
+        // Refund credits on failure
+        await supabaseAdmin.rpc('add_credits', {
+          p_user_id: user.id,
+          p_credits: creditsCost,
+          p_description: 'Refund for failed watermark removal (task failed)'
+        });
+
+        throw new Error(`Kie.ai task failed: ${failMsg}`);
+      }
+
+      await new Promise((r) => setTimeout(r, intervalMs));
+    }
+
+    if (!finalResult) {
+      // Refund credits on timeout
+      await supabaseAdmin.rpc('add_credits', {
+        p_user_id: user.id,
+        p_credits: creditsCost,
+        p_description: 'Refund for failed watermark removal (timeout)'
+      });
+
+      throw new Error('Kie.ai processing timeout');
+    }
+
+    // Parse result JSON
+    let resultUrls: string[] = [];
+    try {
+      const parsed = JSON.parse(finalResult.resultJson || '{}');
+      resultUrls = Array.isArray(parsed.resultUrls) ? parsed.resultUrls : [];
+    } catch (_) {
+      // ignore parse error
+    }
+
+    console.log('Watermark removal successful for user:', user.id, 'task:', taskId);
+
+    return new Response(JSON.stringify({
       success: true,
-      ...result 
+      taskId,
+      resultUrls,
+      raw: finalResult,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
