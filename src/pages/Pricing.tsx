@@ -157,7 +157,7 @@ export default function Pricing() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar user={user} plan={currentPlan} />
+      <Navbar user={user} />
       
       <div className="container mx-auto px-4 py-20">
         {/* Header */}

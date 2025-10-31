@@ -80,6 +80,39 @@ serve(async (req) => {
       );
     }
 
+    // Get service cost for watermark addition
+    const { data: serviceData, error: serviceError } = await supabase
+      .from('service_pricing')
+      .select('credits_cost')
+      .eq('service_type', 'watermark_add')
+      .single();
+
+    if (serviceError || !serviceData) {
+      console.log('Service pricing lookup failed');
+      throw new Error('Failed to get service pricing');
+    }
+
+    const creditsCost = serviceData.credits_cost;
+
+    // Deduct credits using the database function
+    const { data: deductResult, error: deductError } = await supabase
+      .rpc('deduct_credits', {
+        p_user_id: user.id,
+        p_credits: creditsCost,
+        p_description: `Watermark addition for ${video_id}`
+      });
+
+    if (deductError || !deductResult) {
+      console.error('Failed to deduct credits:', deductError);
+      return new Response(JSON.stringify({ 
+        error: 'Insufficient credits',
+        required: creditsCost 
+      }), {
+        status: 402,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Update video status to processing
     await supabase
       .from('videos')

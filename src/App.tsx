@@ -8,6 +8,9 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Pricing from "./pages/Pricing";
+import Credits from "./pages/Credits";
+import WatermarkAdd from "./pages/WatermarkAdd";
+import WatermarkRemove from "./pages/WatermarkRemove";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +27,9 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/credits" element={<Credits />} />
+          <Route path="/watermark-add" element={<WatermarkAdd />} />
+          <Route path="/watermark-remove" element={<WatermarkRemove />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

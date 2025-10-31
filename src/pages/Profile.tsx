@@ -52,7 +52,7 @@ const Profile = () => {
   return (
     <div className="min-h-screen sora-hero">
       <StarField />
-      <Navbar user={user} plan={plan} />
+      <Navbar user={user} />
       
       <div className="relative z-10 min-h-screen flex items-center justify-center px-6 pt-20">
         <div className="w-full max-w-2xl space-y-6">

@@ -5,3 +5,12 @@ verify_jwt = false
 
 [functions.polar-webhook]
 verify_jwt = false
+
+[functions.credits-webhook]
+verify_jwt = false
+
+[functions.remove-watermark]
+verify_jwt = true
+
+[functions.purchase-credits]
+verify_jwt = true

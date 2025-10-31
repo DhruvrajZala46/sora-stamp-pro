@@ -7,11 +7,11 @@ import { useState } from 'react';
 
 interface NavbarProps {
   user: User | null;
-  plan?: string;
+  credits?: number;
   onLogout?: () => void;
 }
 
-const Navbar = ({ user, plan = 'free', onLogout }: NavbarProps) => {
+const Navbar = ({ user, credits, onLogout }: NavbarProps) => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -35,16 +35,18 @@ const Navbar = ({ user, plan = 'free', onLogout }: NavbarProps) => {
           <div className="hidden md:flex items-center gap-2 lg:gap-3">
             {user ? (
               <>
-                <Badge variant="secondary" className="px-3 py-1 text-xs font-medium">
-                  {plan === 'unlimited' ? 'Unlimited' : plan === 'pro' ? 'Pro' : 'Free'}
-                </Badge>
+                {credits !== undefined && (
+                  <Badge variant="secondary" className="px-3 py-1 text-xs font-medium">
+                    {credits} credits
+                  </Badge>
+                )}
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  onClick={() => navigate('/pricing')}
+                  onClick={() => navigate('/credits')}
                   className="text-foreground/80 hover:text-foreground rounded-full px-4"
                 >
-                  Upgrade
+                  Buy Credits
                 </Button>
                 <Button 
                   variant="ghost" 
@@ -93,11 +95,13 @@ const Navbar = ({ user, plan = 'free', onLogout }: NavbarProps) => {
           <div className="md:hidden mt-2 glass-card rounded-2xl p-4 space-y-2">
             {user ? (
               <>
-                <div className="pb-2 mb-2 border-b border-border/50">
-                  <Badge variant="secondary" className="px-3 py-1 text-xs font-medium">
-                    {plan === 'unlimited' ? 'Unlimited' : plan === 'pro' ? 'Pro' : 'Free'}
-                  </Badge>
-                </div>
+                {credits !== undefined && (
+                  <div className="pb-2 mb-2 border-b border-border/50">
+                    <Badge variant="secondary" className="px-3 py-1 text-xs font-medium">
+                      {credits} credits
+                    </Badge>
+                  </div>
+                )}
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start text-foreground/80 hover:text-foreground"
@@ -112,11 +116,11 @@ const Navbar = ({ user, plan = 'free', onLogout }: NavbarProps) => {
                   variant="ghost" 
                   className="w-full justify-start text-foreground/80 hover:text-foreground"
                   onClick={() => {
-                    navigate('/pricing');
+                    navigate('/credits');
                     setMobileMenuOpen(false);
                   }}
                 >
-                  Upgrade
+                  Buy Credits
                 </Button>
                 <Button 
                   variant="ghost" 

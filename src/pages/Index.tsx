@@ -4,188 +4,147 @@ import { User } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import StarField from '@/components/StarField';
 import Navbar from '@/components/Navbar';
-import UploadCard from '@/components/UploadCard';
-import LoadingScreen from '@/components/LoadingScreen';
-import VideoPlayer from '@/components/VideoPlayer';
-import BeforeAfterDemo from '@/components/BeforeAfterDemo';
+import ServiceCard from '@/components/ServiceCard';
 import Footer from '@/components/Footer';
+import { Plus, Eraser, Coins } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
-  const [plan, setPlan] = useState('free');
-  const [videosRemaining, setVideosRemaining] = useState(5);
-  const [maxFileSizeMb, setMaxFileSizeMb] = useState(100);
-  const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
-  const [videoStatus, setVideoStatus] = useState<string>('');
-  const [processedPath, setProcessedPath] = useState<string | null>(null);
+  const [credits, setCredits] = useState(15);
+  const [servicePricing, setServicePricing] = useState({
+    watermark_add: 5,
+    watermark_remove: 15
+  });
 
   useEffect(() => {
-    // Get current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchSubscription(session.user.id);
-      }
-    });
+    checkAuth();
+    fetchServicePricing();
+  }, []);
 
-    // Listen for auth changes
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    setUser(session?.user ?? null);
+    if (session?.user) {
+      fetchCredits(session.user.id);
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchSubscription(session.user.id);
+        fetchCredits(session.user.id);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  };
 
-  // Subscribe to video status changes
-  useEffect(() => {
-    if (!currentVideoId) return;
-
-    const channel = supabase
-      .channel(`video-${currentVideoId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'videos',
-          filter: `id=eq.${currentVideoId}`,
-        },
-        (payload: any) => {
-          setVideoStatus(payload.new.status);
-          if (payload.new.status === 'done') {
-            setProcessedPath(payload.new.processed_path);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [currentVideoId]);
-
-  // Fallback polling in case realtime events are delayed or disabled
-  useEffect(() => {
-    if (!currentVideoId || videoStatus !== 'processing') return;
-    let cancelled = false;
-    const interval = setInterval(async () => {
-      const { data, error } = await supabase
-        .from('videos')
-        .select('status, processed_path, error_text')
-        .eq('id', currentVideoId)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Polling error:', error);
-        return;
-      }
-      if (!data || cancelled) return;
-
-      if (data.status === 'done') {
-        setVideoStatus('done');
-        if (data.processed_path) setProcessedPath(data.processed_path);
-        clearInterval(interval);
-      } else if (data.status === 'error') {
-        setVideoStatus('error');
-        clearInterval(interval);
-      }
-    }, 3000);
-
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [currentVideoId, videoStatus]);
-
-  const fetchSubscription = async (userId: string) => {
+  const fetchCredits = async (userId: string) => {
     const { data } = await supabase
       .from('user_subscriptions')
-      .select('*')
+      .select('credits')
       .eq('user_id', userId)
       .single();
 
     if (data) {
-      setPlan(data.plan);
-      setVideosRemaining(data.videos_remaining);
-      setMaxFileSizeMb(data.max_file_size_mb || 100);
+      setCredits(data.credits || 0);
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setPlan('free');
-    setVideosRemaining(5);
+  const fetchServicePricing = async () => {
+    const { data } = await supabase
+      .from('service_pricing')
+      .select('*');
+
+    if (data) {
+      const pricing = data.reduce((acc, item) => {
+        acc[item.service_type] = item.credits_cost;
+        return acc;
+      }, {} as any);
+      setServicePricing(pricing);
+    }
   };
 
-  const handleUploadComplete = async (videoId: string) => {
-    setCurrentVideoId(videoId);
-    setVideoStatus('processing');
-
-    // Call API to start processing
-    try {
-      await supabase.functions.invoke('start-processing', {
-        body: { video_id: videoId },
-      });
-      
-      // Redirect to dashboard to show progress
-      window.location.href = '/dashboard';
-    } catch (error) {
-      setVideoStatus(null);
+  const handleServiceSelect = (serviceType: 'add' | 'remove') => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    
+    if (serviceType === 'add') {
+      navigate('/watermark-add');
+    } else {
+      navigate('/watermark-remove');
     }
   };
 
   return (
     <div className="min-h-screen sora-hero">
       <StarField />
-      <Navbar user={user} plan={plan} onLogout={handleLogout} />
+      <Navbar user={user} credits={credits} />
 
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 pt-20 sm:pt-24">
-        <div className="max-w-4xl mx-auto text-center space-y-8 sm:space-y-12">
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 pt-20 sm:pt-24 pb-16">
+        <div className="max-w-6xl mx-auto w-full space-y-12">
           {/* Hero Section */}
-          <div className="space-y-4 sm:space-y-6">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-gradient-to-br from-primary to-accent rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-2xl">
-              <div className="w-10 h-10 sm:w-14 sm:h-14 bg-white/10 rounded-xl sm:rounded-2xl backdrop-blur-sm" />
+          <div className="text-center space-y-6">
+            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-primary to-accent rounded-3xl flex items-center justify-center shadow-2xl">
+              <div className="w-14 h-14 bg-white/10 rounded-2xl backdrop-blur-sm" />
             </div>
-            <h1 className="text-3xl sm:text-5xl md:text-5xl font-bold px-4">
-            Add a Viral Sora watermark to literally any video
+            <h1 className="text-4xl sm:text-6xl font-bold px-4">
+              Sora Watermark Studio
             </h1>
-            <p className="text-base sm:text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto px-4">
-            Made something with your camera? Nice. Now let people assume it's AI. Because apparently that's more impressive these days      </p>
-            <p className="text-sm sm:text-lg text-muted-foreground">
-              Rolling out now.
+            <p className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto px-4">
+              Add or remove Sora watermarks with AI. Choose your service below.
             </p>
+            
+            {user && (
+              <div className="flex items-center justify-center gap-4 flex-wrap">
+                <div className="inline-flex items-center gap-2 bg-primary/10 px-6 py-3 rounded-full">
+                  <Coins className="w-5 h-5 text-primary" />
+                  <span className="text-lg font-semibold">{credits} credits available</span>
+                </div>
+                <Button 
+                  onClick={() => navigate('/credits')}
+                  variant="outline"
+                  className="rounded-full"
+                >
+                  Buy More Credits
+                </Button>
+              </div>
+            )}
           </div>
 
-          {/* Upload Card */}
-          <div className="max-w-xl mx-auto">
-            <UploadCard
-              user={user}
-              onAuthRequired={() => navigate('/auth')}
-              onUploadComplete={handleUploadComplete}
-              videosRemaining={videosRemaining}
-              maxFileSizeMb={maxFileSizeMb}
-              currentPlan={plan}
+          {/* Service Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <ServiceCard
+              title="Add Watermark"
+              description="Add a Sora watermark to any video and make it look AI-generated"
+              credits={servicePricing.watermark_add}
+              icon={<Plus className="w-8 h-8 text-white" />}
+              onClick={() => handleServiceSelect('add')}
+            />
+            <ServiceCard
+              title="Remove Watermark"
+              description="Use AI to remove Sora watermarks from OpenAI videos"
+              credits={servicePricing.watermark_remove}
+              icon={<Eraser className="w-8 h-8 text-white" />}
+              onClick={() => handleServiceSelect('remove')}
+              featured
             />
           </div>
 
-          {/* Video Player (shown when processing is done) */}
-          {videoStatus === 'done' && processedPath && (
-            <div className="max-w-2xl mx-auto mt-8">
-              <VideoPlayer videoId={currentVideoId!} processedPath={processedPath} />
+          {!user && (
+            <div className="text-center">
+              <p className="text-muted-foreground mb-4">Sign in to get started with 15 free credits</p>
+              <Button onClick={() => navigate('/auth')} size="lg">
+                Sign In to Continue
+              </Button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Before/After Demo Section */}
-      <BeforeAfterDemo />
-
-      {/* Footer */}
       <Footer />
     </div>
   );

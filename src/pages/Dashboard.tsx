@@ -30,6 +30,7 @@ const ITEMS_PER_PAGE = 9;
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
+  const [credits, setCredits] = useState(0);
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -44,9 +45,22 @@ const Dashboard = () => {
         navigate('/auth');
       } else {
         setUser(session.user);
+        fetchCredits(session.user.id);
       }
     });
   }, [navigate]);
+
+  const fetchCredits = async (userId: string) => {
+    const { data } = await supabase
+      .from('user_subscriptions')
+      .select('credits')
+      .eq('user_id', userId)
+      .single();
+
+    if (data) {
+      setCredits(data.credits || 0);
+    }
+  };
 
   const generateThumbnail = async (video: Video): Promise<string> => {
     if (!video.processed_path) return '';
@@ -220,7 +234,7 @@ const getStatusBadge = (status: string) => {
   return (
     <div className="min-h-screen sora-hero">
       <StarField />
-      <Navbar user={user} onLogout={() => supabase.auth.signOut()} />
+      <Navbar user={user} credits={credits} />
       <div className="relative z-10 min-h-screen px-4 sm:px-6 pt-24 pb-12">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
