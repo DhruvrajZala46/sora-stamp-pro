@@ -68,12 +68,29 @@ const WatermarkRemover = ({ userCredits, creditsCost, onCreditsUpdate }: Waterma
         return;
       }
 
-      if (data?.success && data?.output_url) {
-        setProcessedVideoUrl(data.output_url);
-        toast({
-          title: "Watermark Removed!",
-          description: `${creditsCost} credits deducted. Your video is ready!`
-        });
+      if (data?.success) {
+        const outputUrl = data.output_url 
+          || (Array.isArray(data.resultUrls) ? data.resultUrls[0] : undefined)
+          || (() => {
+            try {
+              const parsed = typeof data.raw?.resultJson === 'string' ? JSON.parse(data.raw.resultJson) : data.raw?.resultJson;
+              return Array.isArray(parsed?.resultUrls) ? parsed.resultUrls[0] : undefined;
+            } catch { return undefined; }
+          })();
+
+        if (outputUrl) {
+          setProcessedVideoUrl(outputUrl);
+          toast({
+            title: "Watermark Removed!",
+            description: `${creditsCost} credits deducted. Your video is ready!`
+          });
+        } else {
+          toast({
+            title: "Processing Completed",
+            description: "But no video URL was returned. Your credits were used. Please try again or contact support.",
+            variant: "destructive"
+          });
+        }
         onCreditsUpdate();
       }
     } catch (error) {
