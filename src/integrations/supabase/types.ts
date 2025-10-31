@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      credit_packages: {
+        Row: {
+          created_at: string
+          credits: number
+          id: string
+          is_active: boolean
+          name: string
+          polar_product_id: string | null
+          price_usd: number
+        }
+        Insert: {
+          created_at?: string
+          credits: number
+          id?: string
+          is_active?: boolean
+          name: string
+          polar_product_id?: string | null
+          price_usd: number
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          polar_product_id?: string | null
+          price_usd?: number
+        }
+        Relationships: []
+      }
+      credits_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description: string
+          id?: string
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       feedback_submissions: {
         Row: {
           created_at: string
@@ -62,9 +119,34 @@ export type Database = {
         }
         Relationships: []
       }
+      service_pricing: {
+        Row: {
+          created_at: string
+          credits_cost: number
+          description: string | null
+          id: string
+          service_type: string
+        }
+        Insert: {
+          created_at?: string
+          credits_cost: number
+          description?: string | null
+          id?: string
+          service_type: string
+        }
+        Update: {
+          created_at?: string
+          credits_cost?: number
+          description?: string | null
+          id?: string
+          service_type?: string
+        }
+        Relationships: []
+      }
       user_subscriptions: {
         Row: {
           created_at: string
+          credits: number
           id: string
           max_file_size_mb: number
           plan: string
@@ -74,6 +156,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          credits?: number
           id?: string
           max_file_size_mb?: number
           plan?: string
@@ -83,6 +166,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          credits?: number
           id?: string
           max_file_size_mb?: number
           plan?: string
@@ -178,8 +262,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_credits: {
+        Args: { p_credits: number; p_description: string; p_user_id: string }
+        Returns: boolean
+      }
       decrement_videos_remaining: {
         Args: { p_user_id: string }
+        Returns: boolean
+      }
+      deduct_credits: {
+        Args: { p_credits: number; p_description: string; p_user_id: string }
         Returns: boolean
       }
       get_user_file_size_limit: { Args: { p_user_id: string }; Returns: number }
