@@ -15,6 +15,7 @@ serve(async (req) => {
     const KIE_API_KEY = Deno.env.get('KIE_AI_API_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
 
     if (!KIE_API_KEY) {
       throw new Error('KIE_AI_API_KEY not configured');
@@ -41,6 +42,11 @@ serve(async (req) => {
       });
     }
 
+    // Create user-scoped client so RLS functions (auth.uid()) use this user's context
+    const supabaseUser = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
+
     const { videoUrl } = await req.json();
 
     if (!videoUrl || !videoUrl.startsWith('https://sora.chatgpt.com/')) {
@@ -66,7 +72,7 @@ serve(async (req) => {
     const creditsCost = serviceData.credits_cost;
 
     // Deduct credits using the database function
-    const { data: deductResult, error: deductError } = await supabaseAdmin
+    const { data: deductResult, error: deductError } = await supabaseUser
       .rpc('deduct_credits', {
         p_user_id: user.id,
         p_credits: creditsCost,
