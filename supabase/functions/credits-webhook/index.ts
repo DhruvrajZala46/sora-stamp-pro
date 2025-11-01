@@ -37,30 +37,36 @@ serve(async (req) => {
     }
     
     const payload = await req.json();
-    console.log('Credits webhook received:', JSON.stringify(payload, null, 2));
+    console.log('Credits webhook received:', {
+      event_type: payload.type || payload.event_type,
+      event_id: payload.id || payload.event_id
+    });
 
     const eventType = payload.type || payload.event_type;
-    const eventId = payload.id || payload.event_id || `${Date.now()}-${Math.random()}`;
+    const webhookId = payload.id || payload.event_id || crypto.randomUUID();
 
     // Check for duplicate webhook (idempotency)
     const { data: existingEvent } = await supabaseAdmin
       .from('webhook_audit')
       .select('id')
-      .eq('event_id', eventId)
-      .single();
+      .eq('webhook_id', webhookId)
+      .maybeSingle();
 
     if (existingEvent) {
-      console.log(`Webhook ${eventId} already processed, skipping`);
+      console.log('Webhook already processed, skipping:', webhookId);
       return new Response(JSON.stringify({ received: true, duplicate: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     // Log webhook attempt
+    const payloadString = JSON.stringify(payload);
+    const payloadHash = payloadString.substring(0, 100); // Simple hash for audit
+    
     await supabaseAdmin.from('webhook_audit').insert({
-      event_id: eventId,
+      webhook_id: webhookId,
       event_type: eventType,
-      payload: payload,
+      payload_hash: payloadHash,
       processed_at: new Date().toISOString(),
     });
 
@@ -77,7 +83,7 @@ serve(async (req) => {
         });
       }
 
-      console.log(`Adding ${credits} credits to user ${userId}`);
+      console.log('Adding credits:', { credits, user_id_hash: userId.substring(0, 8) });
 
       // Add credits using the database function
       const { data, error } = await supabaseAdmin.rpc('add_credits', {

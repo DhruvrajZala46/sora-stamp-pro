@@ -268,6 +268,7 @@ export type Database = {
         Returns: boolean
       }
       ensure_user_subscription: { Args: never; Returns: number }
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
