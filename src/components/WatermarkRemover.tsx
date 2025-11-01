@@ -124,14 +124,18 @@ const WatermarkRemover = ({ userCredits, creditsCost, onCreditsUpdate }: Waterma
             <Input
               id="videoUrl"
               type="url"
-              placeholder="https://sora.chatgpt.com/p/..."
+              placeholder="https://sora.chatgpt.com/p/s_..."
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
               disabled={isProcessing}
             />
-            <p className="text-xs text-muted-foreground">
-              Enter the full URL of a Sora video from sora.chatgpt.com
-            </p>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p>✅ Supported: URLs starting with <code className="bg-muted px-1 rounded">https://sora.chatgpt.com/p/s_</code></p>
+              <p>❌ Not supported: URLs with <code className="bg-muted px-1 rounded">/d/gen_</code> format (these are web page URLs, not direct video URLs)</p>
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                💡 Tip: Use the shareable video URL from Sora, not the page URL
+              </p>
+            </div>
           </div>
 
           <Button 
@@ -165,15 +169,17 @@ const WatermarkRemover = ({ userCredits, creditsCost, onCreditsUpdate }: Waterma
         <Card className="p-6">
           <div className="space-y-4">
             <h3 className="text-xl font-bold">Your Watermark-Free Video</h3>
-            <video 
-              src={processedVideoUrl} 
-              controls 
-              className="w-full rounded-lg"
-            />
+            <div className="max-w-2xl mx-auto">
+              <video 
+                src={processedVideoUrl} 
+                controls 
+                className="w-full rounded-lg max-h-[500px]"
+              />
+            </div>
             <Button 
               onClick={() => window.open(processedVideoUrl, '_blank')}
               variant="outline"
-              className="w-full"
+              className="w-full max-w-md mx-auto block"
             >
               <ExternalLink className="mr-2 w-4 h-4" />
               Open in New Tab
