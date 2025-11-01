@@ -78,13 +78,16 @@ serve(async (req) => {
         await handleSubscriptionCanceled(supabase, polarAccessToken, event.data, webhookId);
         break;
 
-      case 'checkout.created':
       case 'checkout.updated':
-        console.log('Checkout event:', event.type, event.data?.id, 'webhookId:', webhookId);
+        await handleCheckoutUpdated(supabase, event.data, webhookId);
+        break;
+
+      case 'checkout.created':
+        console.log('Checkout created:', event.data?.id, 'webhookId:', webhookId);
         break;
 
       case 'order.created':
-        console.log('Order created:', event.data?.id, 'webhookId:', webhookId);
+        await handleOrderCreated(supabase, event.data, webhookId);
         break;
 
       default:
@@ -363,3 +366,162 @@ async function handleSubscriptionCanceled(supabase: any, polarAccessToken: strin
 
   console.log(`✅ Subscription canceled (direct DB): user=${profile.id}, downgraded to free plan, webhook=${webhookId}`);
 }
+
+// ===== Credits purchasing handlers =====
+async function handleCheckoutUpdated(supabase: any, checkout: any, webhookId: string) {
+  const status = checkout?.status || checkout?.state;
+  console.log('handleCheckoutUpdated status:', status, 'checkoutId:', checkout?.id);
+  if (status !== 'succeeded') {
+    return; // only act on successful checkouts
+  }
+
+  // Idempotency check
+  const { data: existingAudit } = await supabase
+    .from('webhook_audit')
+    .select('id')
+    .eq('webhook_id', webhookId)
+    .maybeSingle();
+  if (existingAudit) {
+    console.warn('Checkout webhook already processed, skipping:', webhookId);
+    return;
+  }
+
+  const metadata = checkout?.metadata || {};
+  const userId = metadata.user_id as string | undefined;
+  const packageId = metadata.package_id as string | undefined;
+
+  if (!userId) {
+    console.error('No user_id in checkout metadata, cannot grant credits');
+    return;
+  }
+
+  // Derive credits from package id (preferred, avoids trusting metadata)
+  let creditsToAdd = 0;
+  if (packageId) {
+    const { data: pkg, error: pkgErr } = await supabase
+      .from('credit_packages')
+      .select('credits')
+      .eq('id', packageId)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (pkgErr) {
+      console.error('Failed to load credit package:', pkgErr);
+    }
+    creditsToAdd = pkg?.credits || 0;
+  }
+
+  if (!creditsToAdd) {
+    const parsed = parseInt((metadata.credits as string) || '0', 10);
+    creditsToAdd = Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  if (!creditsToAdd || creditsToAdd <= 0) {
+    console.warn('No credits to add resolved for checkout:', checkout?.id);
+    return;
+  }
+
+  const { data: rpcRes, error: rpcErr } = await supabase.rpc('add_credits', {
+    p_user_id: userId,
+    p_credits: creditsToAdd,
+    p_description: `Polar checkout ${checkout?.id}`
+  });
+
+  if (rpcErr) {
+    console.error('add_credits RPC failed:', rpcErr);
+    throw new Error('Failed to add credits');
+  }
+
+  const { error: auditErr2 } = await supabase.from('webhook_audit').insert({
+    webhook_id: webhookId,
+    event_type: 'checkout.updated',
+    subscription_id: checkout?.id,
+    user_id: userId,
+    payload_hash: ''
+  });
+  if (auditErr2) {
+    console.error('Failed to insert webhook audit (checkout):', auditErr2);
+  }
+
+  console.log(`✅ Credits added (${creditsToAdd}) to user=${userId} from checkout=${checkout?.id}`);
+}
+
+async function handleOrderCreated(supabase: any, order: any, webhookId: string) {
+  console.log('handleOrderCreated orderId:', order?.id);
+
+  // Idempotency check
+  const { data: existingAudit } = await supabase
+    .from('webhook_audit')
+    .select('id')
+    .eq('webhook_id', webhookId)
+    .maybeSingle();
+  if (existingAudit) {
+    console.warn('Order webhook already processed, skipping:', webhookId);
+    return;
+  }
+
+  // Try derive user by email
+  const email = order?.customer?.email || order?.user?.email || order?.customer_email;
+  let userId: string | null = null;
+  if (email) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+    userId = profile?.id ?? null;
+  }
+
+  // Derive credits from product ids
+  let productIds: string[] = [];
+  if (Array.isArray(order?.lines)) {
+    productIds = order.lines
+      .map((l: any) => l?.product?.id || l?.product_id)
+      .filter((v: any) => typeof v === 'string');
+  } else if (order?.product?.id) {
+    productIds = [order.product.id];
+  } else if (order?.product_id) {
+    productIds = [order.product_id];
+  }
+
+  let creditsToAdd = 0;
+  if (productIds.length) {
+    const { data: pkgs, error: pkgsErr } = await supabase
+      .from('credit_packages')
+      .select('credits')
+      .in('polar_product_id', productIds)
+      .eq('is_active', true);
+    if (pkgsErr) {
+      console.error('Failed to load packages for products:', pkgsErr);
+    }
+    creditsToAdd = (pkgs || []).reduce((sum: number, p: any) => sum + (p.credits || 0), 0);
+  }
+
+  if (!userId || !creditsToAdd) {
+    console.warn('Insufficient data to add credits from order:', { userId, creditsToAdd });
+    return;
+  }
+
+  const { error: rpcErr } = await supabase.rpc('add_credits', {
+    p_user_id: userId,
+    p_credits: creditsToAdd,
+    p_description: `Polar order ${order?.id}`
+  });
+  if (rpcErr) {
+    console.error('add_credits RPC failed (order):', rpcErr);
+    throw new Error('Failed to add credits (order)');
+  }
+
+  const { error: auditErr } = await supabase.from('webhook_audit').insert({
+    webhook_id: webhookId,
+    event_type: 'order.created',
+    subscription_id: order?.id,
+    user_id: userId,
+    payload_hash: ''
+  });
+  if (auditErr) {
+    console.error('Failed to insert webhook audit (order):', auditErr);
+  }
+
+  console.log(`✅ Credits added (${creditsToAdd}) to user=${userId} from order=${order?.id}`);
+}
+

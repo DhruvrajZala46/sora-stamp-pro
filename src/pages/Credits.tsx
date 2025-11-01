@@ -33,6 +33,60 @@ const Credits = () => {
     fetchPackages();
   }, []);
 
+  // Handle return from checkout: verify via webhook and refresh credits
+  useEffect(() => {
+    const run = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const status = params.get('status');
+      const checkoutId = params.get('checkout_id');
+
+      if (!user || status !== 'success') return;
+
+      toast({
+        title: "Processing payment...",
+        description: "Verifying your payment. This may take a few seconds.",
+      });
+
+      const old = credits;
+      let attempts = 0;
+      const maxAttempts = 10;
+
+      while (attempts < maxAttempts) {
+        try {
+          const { data } = await supabase
+            .from('user_subscriptions')
+            .select('credits')
+            .eq('user_id', user.id)
+            .single();
+          const current = data?.credits || 0;
+
+          if (current > old) {
+            setCredits(current);
+            toast({
+              title: "Payment successful!",
+              description: "Credits have been added to your account.",
+            });
+            navigate('/credits', { replace: true });
+            return;
+          }
+        } catch (e) {
+          console.warn('Polling credits failed:', e);
+        }
+        await new Promise((r) => setTimeout(r, 1200));
+        attempts++;
+      }
+
+      toast({
+        title: "Payment verified but credits not added.",
+        description: "Please refresh or contact support.",
+        variant: "destructive",
+      });
+      navigate('/credits', { replace: true });
+    };
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
