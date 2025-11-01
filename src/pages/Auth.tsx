@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import StarField from '@/components/StarField';
-import { Mail, Check, Zap, Lock, Video } from 'lucide-react';
+import { Mail, Check, Zap, Lock, Video, Sparkles, Shield, ArrowRight } from 'lucide-react';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -81,77 +81,106 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen sora-hero flex items-center justify-center px-4 sm:px-6 py-8">
+    <div className="min-h-screen sora-hero flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
       <StarField />
-      <div className="relative z-10 w-full max-w-5xl mx-auto">
-        <div className="grid md:grid-cols-2 gap-8 items-center">
-          {/* Left Side - Marketing Content */}
-          <div className="hidden md:block space-y-6 animate-fade-in">
-            <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
-                <Zap className="w-4 h-4 text-primary" />
-                <span className="text-sm font-semibold text-primary">100 Free Credits on Signup</span>
-              </div>
-              <h1 className="text-4xl lg:text-5xl font-bold leading-tight">
-                Professional Video Watermarking Made Simple
+      
+      <div className="relative z-10 w-full max-w-7xl mx-auto">
+        <div className="grid lg:grid-cols-[1.2fr_1fr] gap-12 lg:gap-16 items-center">
+          
+          {/* Left Side - Premium Marketing Content */}
+          <div className="hidden lg:block space-y-10 animate-fade-in">
+            {/* Premium Badge */}
+            <div className="inline-flex items-center gap-2.5 bg-primary/5 backdrop-blur-sm px-5 py-2.5 rounded-full border border-primary/10">
+              <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+              <span className="text-sm font-semibold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                100 Free Credits • No Card Required
+              </span>
+            </div>
+
+            {/* Hero Headline */}
+            <div className="space-y-5">
+              <h1 className="text-5xl xl:text-6xl font-bold leading-[1.1] tracking-tight">
+                Professional Video
+                <br />
+                <span className="bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                  Watermarking
+                </span>
+                <br />
+                Made Simple
               </h1>
-              <p className="text-xl text-muted-foreground">
-                Join thousands of creators using AI-powered watermarking for their videos
+              <p className="text-xl text-muted-foreground leading-relaxed max-w-lg">
+                Join thousands of creators using AI-powered technology to protect and brand their content
               </p>
             </div>
 
+            {/* Premium Feature Cards */}
             <div className="space-y-4">
-              <div className="flex items-start gap-3 p-4 rounded-lg bg-background/50 backdrop-blur-sm border border-primary/10">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Check className="w-5 h-5 text-primary" />
+              {[
+                {
+                  icon: Zap,
+                  title: 'Lightning Fast Processing',
+                  description: 'Add or remove watermarks in seconds with advanced AI',
+                },
+                {
+                  icon: Video,
+                  title: 'Professional Quality',
+                  description: 'Studio-grade output with seamless integration',
+                },
+                {
+                  icon: Shield,
+                  title: '100% Secure & Private',
+                  description: 'Bank-level encryption with auto-deletion after processing',
+                },
+              ].map((feature, index) => (
+                <div
+                  key={index}
+                  className="group flex items-start gap-4 p-5 rounded-xl bg-background/40 backdrop-blur-sm border border-border/50 hover:border-primary/20 hover:bg-background/60 transition-all duration-300"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/10 transition-colors">
+                    <feature.icon className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="space-y-1 pt-0.5">
+                    <h3 className="font-semibold text-foreground">{feature.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold mb-1">Lightning Fast Processing</h3>
-                  <p className="text-sm text-muted-foreground">Add or remove watermarks in seconds with AI technology</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-4 rounded-lg bg-background/50 backdrop-blur-sm border border-primary/10">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Video className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-1">Professional Quality</h3>
-                  <p className="text-sm text-muted-foreground">High-quality output with seamless watermark integration</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-4 rounded-lg bg-background/50 backdrop-blur-sm border border-primary/10">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Lock className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-1">100% Secure</h3>
-                  <p className="text-sm text-muted-foreground">Your videos are encrypted and automatically deleted after processing</p>
-                </div>
-              </div>
+              ))}
             </div>
 
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Check className="w-4 h-4 text-primary" />
-              <span>No credit card required</span>
+            {/* Trust Indicators */}
+            <div className="flex items-center gap-6 pt-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Check className="w-4 h-4 text-primary" />
+                <span>No credit card</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Check className="w-4 h-4 text-primary" />
+                <span>100 free credits</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Check className="w-4 h-4 text-primary" />
+                <span>Cancel anytime</span>
+              </div>
             </div>
           </div>
 
-          {/* Right Side - Auth Form */}
-          <div className="glass-card rounded-2xl p-6 sm:p-8 space-y-6 animate-scale-in">
+          {/* Right Side - Premium Auth Form */}
+          <div className="glass-card rounded-3xl p-8 sm:p-10 lg:p-12 space-y-8 animate-scale-in shadow-xl border-2">
             {emailSent ? (
-              <div className="text-center space-y-4">
-                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                  <Mail className="w-8 h-8 text-primary" />
+              <div className="text-center space-y-6">
+                <div className="mx-auto w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                  <Mail className="w-10 h-10 text-primary" />
                 </div>
-                <h2 className="text-3xl font-bold">Check Your Email</h2>
-                <p className="text-muted-foreground">
-                  We've sent a verification link to <span className="font-medium text-foreground">{email}</span>
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Click the link in the email to verify your account and claim your 100 free credits!
-                </p>
+                <div className="space-y-3">
+                  <h2 className="text-3xl font-bold tracking-tight">Check Your Email</h2>
+                  <p className="text-muted-foreground text-base">
+                    We've sent a verification link to
+                  </p>
+                  <p className="font-semibold text-foreground text-lg">{email}</p>
+                  <p className="text-sm text-muted-foreground px-6">
+                    Click the link in the email to verify your account and claim your 100 free credits!
+                  </p>
+                </div>
                 <Button 
                   onClick={() => {
                     setEmailSent(false);
@@ -159,29 +188,39 @@ const Auth = () => {
                     setPassword('');
                   }}
                   variant="outline"
-                  className="w-full"
+                  className="w-full h-12 mt-4"
                 >
+                  <ArrowRight className="w-4 h-4 mr-2" />
                   Back to Sign In
                 </Button>
               </div>
             ) : (
               <>
-                <div className="text-center space-y-2">
-                  <h2 className="text-2xl sm:text-3xl font-bold">
-                    {isLogin ? 'Welcome Back' : '🎉 Get 100 Free Credits'}
+                {/* Header */}
+                <div className="text-center space-y-3">
+                  <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+                    {isLogin ? 'Welcome Back' : (
+                      <>
+                        Get Started{' '}
+                        <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                          Free
+                        </span>
+                      </>
+                    )}
                   </h2>
-                  <p className="text-sm sm:text-base text-muted-foreground">
-                    {isLogin ? 'Sign in to continue watermarking' : 'Create your free account — no credit card required'}
+                  <p className="text-base text-muted-foreground">
+                    {isLogin ? 'Sign in to continue watermarking' : '100 free credits waiting • No credit card required'}
                   </p>
                 </div>
 
+                {/* Google Sign In Button */}
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full h-12 text-base font-medium"
+                  className="w-full h-14 text-base font-medium hover:bg-accent/50 transition-all duration-300 group"
                   onClick={handleGoogleSignIn}
                 >
-                  <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
                     <path
                       fill="currentColor"
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -199,21 +238,24 @@ const Auth = () => {
                       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                     />
                   </svg>
-                  Continue with Google — Fast & Secure
+                  <span>Continue with Google</span>
+                  <ArrowRight className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Button>
 
+                {/* Divider */}
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
+                    <span className="w-full border-t border-border/50" />
                   </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">Or continue with email</span>
+                  <div className="relative flex justify-center text-xs uppercase tracking-wider">
+                    <span className="bg-card px-4 text-muted-foreground font-medium">Or continue with email</span>
                   </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                {/* Email Form */}
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="space-y-2.5">
+                    <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
                     <Input
                       id="email"
                       type="email"
@@ -221,11 +263,11 @@ const Auth = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="bg-background/50 h-11"
+                      className="h-12 bg-background/50 border-border/50 focus:border-primary transition-colors"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                  <div className="space-y-2.5">
+                    <Label htmlFor="password" className="text-sm font-medium">Password</Label>
                     <Input
                       id="password"
                       type="password"
@@ -234,43 +276,64 @@ const Auth = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       minLength={6}
-                      className="bg-background/50 h-11"
+                      className="h-12 bg-background/50 border-border/50 focus:border-primary transition-colors"
                     />
                   </div>
-                  <Button type="submit" className="w-full btn-hero h-12 text-base font-semibold" disabled={loading}>
-                    {loading ? 'Loading...' : isLogin ? 'Sign In' : '🚀 Create Free Account (100 Credits Included)'}
+                  <Button 
+                    type="submit" 
+                    className="w-full btn-hero h-14 text-base font-semibold shadow-lg hover:shadow-xl transition-all" 
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <span className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Processing...
+                      </span>
+                    ) : isLogin ? (
+                      <span className="flex items-center gap-2">
+                        Sign In
+                        <ArrowRight className="w-4 h-4" />
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4" />
+                        Create Free Account
+                      </span>
+                    )}
                   </Button>
                 </form>
 
+                {/* Mobile Benefits */}
                 {!isLogin && (
-                  <div className="md:hidden space-y-3 pt-2">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span>100 free credits instantly</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span>No credit card required</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span>Secure & encrypted processing</span>
-                    </div>
+                  <div className="lg:hidden space-y-3 pt-2 border-t border-border/50">
+                    {[
+                      '100 free credits instantly',
+                      'No credit card required',
+                      'Secure & encrypted processing'
+                    ].map((benefit, index) => (
+                      <div key={index} className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                        <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                        <span>{benefit}</span>
+                      </div>
+                    ))}
                   </div>
                 )}
 
-                <div className="text-center text-sm text-muted-foreground">
-                  {isLogin ? "Don't have an account? " : 'Already have an account? '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsLogin(!isLogin);
-                      setEmailSent(false);
-                    }}
-                    className="text-primary hover:underline font-medium"
-                  >
-                    {isLogin ? 'Sign up for free' : 'Sign in'}
-                  </button>
+                {/* Toggle Auth Mode */}
+                <div className="text-center pt-2">
+                  <p className="text-sm text-muted-foreground">
+                    {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsLogin(!isLogin);
+                        setEmailSent(false);
+                      }}
+                      className="text-primary hover:underline font-semibold transition-colors"
+                    >
+                      {isLogin ? 'Sign up for free' : 'Sign in'}
+                    </button>
+                  </p>
                 </div>
               </>
             )}
