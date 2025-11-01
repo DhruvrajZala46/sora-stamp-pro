@@ -129,13 +129,9 @@ const WatermarkRemover = ({ userCredits, creditsCost, onCreditsUpdate }: Waterma
               onChange={(e) => setVideoUrl(e.target.value)}
               disabled={isProcessing}
             />
-            <div className="text-xs text-muted-foreground space-y-1">
-              <p>✅ Supported: URLs starting with <code className="bg-muted px-1 rounded">https://sora.chatgpt.com/p/s_</code></p>
-              <p>❌ Not supported: URLs with <code className="bg-muted px-1 rounded">/d/gen_</code> format (these are web page URLs, not direct video URLs)</p>
-              <p className="text-xs text-amber-600 dark:text-amber-400">
-                💡 Tip: Use the shareable video URL from Sora, not the page URL
-              </p>
-            </div>
+            <p className="text-xs text-muted-foreground">
+              Supported: URLs starting with <code className="bg-muted px-1 rounded">https://sora.chatgpt.com/p/s_</code>
+            </p>
           </div>
 
           <Button 
