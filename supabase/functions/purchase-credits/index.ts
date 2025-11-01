@@ -71,12 +71,11 @@ serve(async (req) => {
     const polarBaseUrl = polarEnv === 'sandbox' 
       ? 'https://sandbox-api.polar.sh/v1' 
       : 'https://api.polar.sh/v1';
-    const polarUrl = `${polarBaseUrl}/checkouts/custom`;
 
     const checkoutData = {
-      product_price_id: packageData.polar_product_id,
+      products: [packageData.polar_product_id],
       customer_email: user.email,
-      success_url: `${origin}/credits?status=success`,
+      success_url: `${origin}/credits?status=success&checkout_id={CHECKOUT_ID}`,
       metadata: {
         user_id: user.id,
         package_id: packageId,
@@ -86,7 +85,7 @@ serve(async (req) => {
 
     console.log('Creating Polar checkout for credits:', checkoutData);
 
-    const polarResponse = await fetch(polarUrl, {
+    const polarResponse = await fetch(`${polarBaseUrl}/checkouts/`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${POLAR_ACCESS_TOKEN}`,
