@@ -66,12 +66,17 @@ serve(async (req) => {
     const origin = req.headers.get('origin') || req.headers.get('referer') || 
                    Deno.env.get('APP_URL') || `${SUPABASE_URL}`;
 
-    const polarUrl = 'https://api.polar.sh/v1/checkouts/custom';
+    // Determine Polar environment and base URL
+    const polarEnv = Deno.env.get('POLAR_ENVIRONMENT') || 'production';
+    const polarBaseUrl = polarEnv === 'sandbox' 
+      ? 'https://sandbox-api.polar.sh/v1' 
+      : 'https://api.polar.sh/v1';
+    const polarUrl = `${polarBaseUrl}/checkouts/custom`;
 
     const checkoutData = {
       product_price_id: packageData.polar_product_id,
       customer_email: user.email,
-      success_url: `${origin}/?credits_purchase=success`,
+      success_url: `${origin}/credits?status=success`,
       metadata: {
         user_id: user.id,
         package_id: packageId,

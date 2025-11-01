@@ -14,12 +14,20 @@ const VideoPlayer = ({ videoId, processedPath }: VideoPlayerProps) => {
   const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Create a signed URL for inline playback as soon as the processed path is available
+  // Create playback URL - handle both Supabase storage paths and external URLs
   useEffect(() => {
     let cancelled = false;
     async function genPlaybackUrl() {
       try {
         if (!processedPath) return;
+        
+        // If it's an external URL (starts with http), use it directly
+        if (processedPath.startsWith('http://') || processedPath.startsWith('https://')) {
+          if (!cancelled) setPlaybackUrl(processedPath);
+          return;
+        }
+        
+        // Otherwise, create signed URL from Supabase storage
         const { data, error } = await supabase.storage
           .from('processed')
           .createSignedUrl(processedPath, 3600);
@@ -35,14 +43,19 @@ const VideoPlayer = ({ videoId, processedPath }: VideoPlayerProps) => {
 
   const handleDownload = async () => {
     try {
-      const { data, error } = await supabase.storage
-        .from('processed')
-        .createSignedUrl(processedPath, 3600);
+      let downloadLink = processedPath;
+      
+      // If it's a storage path, create signed URL
+      if (!processedPath.startsWith('http://') && !processedPath.startsWith('https://')) {
+        const { data, error } = await supabase.storage
+          .from('processed')
+          .createSignedUrl(processedPath, 3600);
+        if (error) throw error;
+        downloadLink = data.signedUrl;
+      }
 
-      if (error) throw error;
-
-      setDownloadUrl(data.signedUrl);
-      window.open(data.signedUrl, '_blank');
+      setDownloadUrl(downloadLink);
+      window.open(downloadLink, '_blank');
       
       toast({
         title: 'Download started',

@@ -67,6 +67,12 @@ const Dashboard = () => {
     if (!video.processed_path) return '';
 
     try {
+      // If it's an external URL, use it directly
+      if (video.processed_path.startsWith('http://') || video.processed_path.startsWith('https://')) {
+        return video.processed_path;
+      }
+      
+      // Otherwise, create signed URL from Supabase storage
       const { data, error } = await supabase.storage
         .from('processed')
         .createSignedUrl(video.processed_path, 3600);
@@ -145,13 +151,18 @@ const Dashboard = () => {
     }
 
     try {
-      const { data, error } = await supabase.storage
-        .from('processed')
-        .createSignedUrl(video.processed_path, 3600);
+      let downloadUrl = video.processed_path;
+      
+      // If it's a storage path, create signed URL
+      if (!video.processed_path.startsWith('http://') && !video.processed_path.startsWith('https://')) {
+        const { data, error } = await supabase.storage
+          .from('processed')
+          .createSignedUrl(video.processed_path, 3600);
+        if (error) throw error;
+        downloadUrl = data.signedUrl;
+      }
 
-      if (error) throw error;
-
-      window.open(data.signedUrl, '_blank');
+      window.open(downloadUrl, '_blank');
       toast.success('✅ Download Started - Your watermarked video is now downloading!');
     } catch (error) {
       toast.error('❌ Download Failed - Unable to download your video. Please try again or contact support.');
@@ -200,13 +211,18 @@ const Dashboard = () => {
     }
 
     try {
-      const { data, error } = await supabase.storage
-        .from('processed')
-        .createSignedUrl(video.processed_path, 604800);
+      let shareUrl = video.processed_path;
+      
+      // If it's a storage path, create signed URL
+      if (!video.processed_path.startsWith('http://') && !video.processed_path.startsWith('https://')) {
+        const { data, error } = await supabase.storage
+          .from('processed')
+          .createSignedUrl(video.processed_path, 604800);
+        if (error) throw error;
+        shareUrl = data.signedUrl;
+      }
 
-      if (error) throw error;
-
-      await navigator.clipboard.writeText(data.signedUrl);
+      await navigator.clipboard.writeText(shareUrl);
       toast.success('🔗 Share Link Copied - The link to your watermarked video has been copied to your clipboard!');
     } catch (error) {
       toast.error('❌ Share Failed - Unable to generate a share link. Please try again or contact support.');

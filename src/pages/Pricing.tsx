@@ -110,16 +110,8 @@ export default function Pricing() {
       setUser(user);
 
       if (user) {
-
-        const { data: subscription } = await supabase
-          .from('user_subscriptions')
-          .select('plan')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (subscription) {
-          setCurrentPlan(subscription.plan);
-        }
+        // No longer using plan-based subscriptions - all users are on credit system
+        setCurrentPlan('free');
       }
     } catch (error) {
       console.error('Error checking auth:', error);
