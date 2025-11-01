@@ -29,17 +29,12 @@ const Profile = () => {
   }, [navigate]);
 
   const fetchSubscription = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('user_subscriptions')
-      .select('credits')
-      .eq('user_id', userId)
-      .maybeSingle();
-    
-    if (error) {
-      console.error('Error fetching credits:', error);
+    const { data: currentCredits, error: ensureError } = await supabase.rpc('ensure_user_subscription');
+    if (ensureError) {
+      console.error('Error ensuring subscription:', ensureError);
       setCredits(0);
     } else {
-      setCredits(data?.credits || 0);
+      setCredits(currentCredits ?? 0);
     }
 
     // Get total processed videos count

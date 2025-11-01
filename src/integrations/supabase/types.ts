@@ -267,6 +267,7 @@ export type Database = {
         Args: { p_credits: number; p_description: string; p_user_id: string }
         Returns: boolean
       }
+      ensure_user_subscription: { Args: never; Returns: number }
     }
     Enums: {
       [_ in never]: never
