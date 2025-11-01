@@ -13,11 +13,10 @@ const WatermarkAdd = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [credits, setCredits] = useState(0);
-  const [creditsCost, setCreditsCost] = useState(50);
+  const [creditsCost, setCreditsCost] = useState(200);
 
   useEffect(() => {
     checkAuth();
-    fetchServicePricing();
   }, []);
 
   const checkAuth = async () => {
@@ -39,18 +38,6 @@ const WatermarkAdd = () => {
 
     if (data) {
       setCredits(data.credits || 0);
-    }
-  };
-
-  const fetchServicePricing = async () => {
-    const { data } = await supabase
-      .from('service_pricing')
-      .select('credits_cost')
-      .eq('service_type', 'watermark_add')
-      .single();
-
-    if (data) {
-      setCreditsCost(data.credits_cost);
     }
   };
 

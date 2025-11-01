@@ -129,8 +129,8 @@ const Credits = () => {
             </p>
             <div className="mt-6 p-4 bg-primary/10 rounded-lg inline-block">
               <p className="text-sm text-muted-foreground mb-2">Current Pricing:</p>
-              <p className="text-lg"><strong>Add Watermark:</strong> 50 credits per video</p>
               <p className="text-lg"><strong>Remove Watermark:</strong> 100 credits per video</p>
+              <p className="text-lg"><strong>Add Watermark:</strong> 200 credits per video</p>
             </div>
           </div>
 
@@ -175,11 +175,11 @@ const Credits = () => {
                           </div>
                           <div className="flex items-center gap-2">
                             <Check className="w-5 h-5 text-green-500" />
-                            <span className="text-sm">{Math.floor(pkg.credits / 50)} watermark additions</span>
+                            <span className="text-sm">{Math.floor(pkg.credits / 100)} watermark removals</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <Check className="w-5 h-5 text-green-500" />
-                            <span className="text-sm">{Math.floor(pkg.credits / 100)} watermark removals</span>
+                            <span className="text-sm">{Math.floor(pkg.credits / 200)} watermark additions</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <Check className="w-5 h-5 text-green-500" />

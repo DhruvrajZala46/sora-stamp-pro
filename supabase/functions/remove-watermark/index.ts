@@ -58,18 +58,8 @@ serve(async (req) => {
 
     console.log('Starting watermark removal for user:', user.id);
 
-    // Get service cost
-    const { data: serviceData, error: serviceError } = await supabaseAdmin
-      .from('service_pricing')
-      .select('credits_cost')
-      .eq('service_type', 'watermark_remove')
-      .single();
-
-    if (serviceError || !serviceData) {
-      throw new Error('Failed to get service pricing');
-    }
-
-    const creditsCost = serviceData.credits_cost;
+    // Fixed cost: 100 credits for watermark removal
+    const creditsCost = 100;
 
     // Deduct credits using the database function
     const { data: deductResult, error: deductError } = await supabaseUser
@@ -192,10 +182,36 @@ serve(async (req) => {
 
     console.log('Watermark removal successful for user:', user.id, 'task:', taskId);
 
+    // Extract output URL
+    const outputUrl = resultUrls.length > 0 ? resultUrls[0] : null;
+
+    // Save processed video to database
+    if (outputUrl) {
+      const { error: videoError } = await supabaseAdmin
+        .from('videos')
+        .insert({
+          user_id: user.id,
+          filename: `removed_watermark_${Date.now()}.mp4`,
+          storage_path: outputUrl,
+          processed_path: outputUrl,
+          status: 'completed',
+          operation_type: 'watermark_remove',
+          processing_started_at: new Date().toISOString(),
+          processing_finished_at: new Date().toISOString()
+        });
+
+      if (videoError) {
+        console.error('Failed to save video record:', videoError);
+      } else {
+        console.log('✅ Video record saved to database');
+      }
+    }
+
     return new Response(JSON.stringify({
       success: true,
       taskId,
       resultUrls,
+      output_url: outputUrl,
       raw: finalResult,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

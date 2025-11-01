@@ -14,8 +14,8 @@ const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
-  const [plan, setPlan] = useState('free');
-  const [videosRemaining, setVideosRemaining] = useState(0);
+  const [credits, setCredits] = useState(0);
+  const [totalProcessed, setTotalProcessed] = useState(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -31,14 +31,21 @@ const Profile = () => {
   const fetchSubscription = async (userId: string) => {
     const { data } = await supabase
       .from('user_subscriptions')
-      .select('plan, videos_remaining')
+      .select('credits')
       .eq('user_id', userId)
       .single();
     
     if (data) {
-      setPlan(data.plan);
-      setVideosRemaining(data.videos_remaining);
+      setCredits(data.credits || 0);
     }
+
+    // Get total processed videos count
+    const { count } = await supabase
+      .from('videos')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+    
+    setTotalProcessed(count || 0);
   };
 
   const handleLogout = async () => {
@@ -77,19 +84,19 @@ const Profile = () => {
               <div className="grid grid-cols-2 gap-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Current Plan</CardTitle>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Available Credits</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-2xl font-bold capitalize">{plan}</p>
+                    <p className="text-2xl font-bold">{credits}</p>
                   </CardContent>
                 </Card>
                 
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Videos Remaining</CardTitle>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Videos Processed</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-2xl font-bold">{videosRemaining}</p>
+                    <p className="text-2xl font-bold">{totalProcessed}</p>
                   </CardContent>
                 </Card>
               </div>
@@ -106,6 +113,14 @@ const Profile = () => {
                   onClick={() => navigate('/dashboard')}
                 >
                   My Videos
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => navigate('/credits')}
+                >
+                  Buy Credits
                 </Button>
                 
                 <Button 

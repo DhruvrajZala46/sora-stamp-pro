@@ -80,19 +80,8 @@ serve(async (req) => {
       );
     }
 
-    // Get service cost for watermark addition
-    const { data: serviceData, error: serviceError } = await supabase
-      .from('service_pricing')
-      .select('credits_cost')
-      .eq('service_type', 'watermark_add')
-      .single();
-
-    if (serviceError || !serviceData) {
-      console.log('Service pricing lookup failed');
-      throw new Error('Failed to get service pricing');
-    }
-
-    const creditsCost = serviceData.credits_cost;
+    // Fixed cost: 200 credits for watermark addition
+    const creditsCost = 200;
 
     // Deduct credits using the database function
     const { data: deductResult, error: deductError } = await supabase
@@ -113,11 +102,12 @@ serve(async (req) => {
       });
     }
 
-    // Update video status to processing
+    // Update video status to processing and set operation type
     await supabase
       .from('videos')
       .update({ 
         status: 'processing',
+        operation_type: 'watermark_add',
         processing_started_at: new Date().toISOString()
       })
       .eq('id', video_id);

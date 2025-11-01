@@ -23,6 +23,7 @@ interface Video {
   error_text: string | null;
   size_bytes: number | null;
   duration_seconds: number | null;
+  operation_type: string;
 }
 
 const ITEMS_PER_PAGE = 9;
@@ -340,11 +341,16 @@ const getStatusBadge = (status: string) => {
                       )}
                     </div>
 
-                    {/* Video Info */}
+                     {/* Video Info */}
                     <div className="p-4">
-                      <h3 className="font-semibold text-lg mb-2 truncate" title={video.filename}>
-                        {video.filename}
-                      </h3>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold text-lg truncate" title={video.filename}>
+                          {video.filename}
+                        </h3>
+                        <Badge variant="outline" className="ml-2 capitalize text-xs">
+                          {video.operation_type === 'watermark_remove' ? 'Removed' : 'Added'}
+                        </Badge>
+                      </div>
                       
                       <div className="space-y-2 text-sm text-muted-foreground mb-4">
                         <div className="flex items-center gap-2">

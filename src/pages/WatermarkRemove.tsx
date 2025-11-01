@@ -13,11 +13,10 @@ const WatermarkRemove = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [credits, setCredits] = useState(0);
-  const [creditsCost, setCreditsCost] = useState(100);
+  const [creditsCost] = useState(100); // Fixed: 100 credits
 
   useEffect(() => {
     checkAuth();
-    fetchServicePricing();
   }, []);
 
   const checkAuth = async () => {
@@ -39,18 +38,6 @@ const WatermarkRemove = () => {
 
     if (data) {
       setCredits(data.credits || 0);
-    }
-  };
-
-  const fetchServicePricing = async () => {
-    const { data } = await supabase
-      .from('service_pricing')
-      .select('credits_cost')
-      .eq('service_type', 'watermark_remove')
-      .single();
-
-    if (data) {
-      setCreditsCost(data.credits_cost);
     }
   };
 

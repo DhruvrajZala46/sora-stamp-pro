@@ -82,7 +82,7 @@ const WatermarkRemover = ({ userCredits, creditsCost, onCreditsUpdate }: Waterma
           setProcessedVideoUrl(outputUrl);
           toast({
             title: "Watermark Removed!",
-            description: `${creditsCost} credits deducted. Your video is ready!`
+            description: `${creditsCost} credits deducted. Video saved to My Videos!`
           });
         } else {
           toast({

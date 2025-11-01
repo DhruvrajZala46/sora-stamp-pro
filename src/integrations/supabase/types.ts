@@ -147,32 +147,35 @@ export type Database = {
         Row: {
           created_at: string
           credits: number
+          has_received_welcome_credits: boolean | null
           id: string
-          max_file_size_mb: number
-          plan: string
+          max_file_size_mb: number | null
+          plan: string | null
           updated_at: string
           user_id: string
-          videos_remaining: number
+          videos_remaining: number | null
         }
         Insert: {
           created_at?: string
           credits?: number
+          has_received_welcome_credits?: boolean | null
           id?: string
-          max_file_size_mb?: number
-          plan?: string
+          max_file_size_mb?: number | null
+          plan?: string | null
           updated_at?: string
           user_id: string
-          videos_remaining?: number
+          videos_remaining?: number | null
         }
         Update: {
           created_at?: string
           credits?: number
+          has_received_welcome_credits?: boolean | null
           id?: string
-          max_file_size_mb?: number
-          plan?: string
+          max_file_size_mb?: number | null
+          plan?: string | null
           updated_at?: string
           user_id?: string
-          videos_remaining?: number
+          videos_remaining?: number | null
         }
         Relationships: []
       }
@@ -183,6 +186,7 @@ export type Database = {
           error_text: string | null
           filename: string
           id: string
+          operation_type: string | null
           processed_path: string | null
           processing_finished_at: string | null
           processing_started_at: string | null
@@ -197,6 +201,7 @@ export type Database = {
           error_text?: string | null
           filename: string
           id?: string
+          operation_type?: string | null
           processed_path?: string | null
           processing_finished_at?: string | null
           processing_started_at?: string | null
@@ -211,6 +216,7 @@ export type Database = {
           error_text?: string | null
           filename?: string
           id?: string
+          operation_type?: string | null
           processed_path?: string | null
           processing_finished_at?: string | null
           processing_started_at?: string | null

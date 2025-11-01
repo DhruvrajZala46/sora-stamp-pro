@@ -12,15 +12,14 @@ import { Button } from '@/components/ui/button';
 const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
-  const [credits, setCredits] = useState(15);
-  const [servicePricing, setServicePricing] = useState({
-    watermark_add: 5,
-    watermark_remove: 15
+  const [credits, setCredits] = useState(100);
+  const [servicePricing] = useState({
+    watermark_add: 200,
+    watermark_remove: 100
   });
 
   useEffect(() => {
     checkAuth();
-    fetchServicePricing();
   }, []);
 
   const checkAuth = async () => {
@@ -49,20 +48,6 @@ const Index = () => {
 
     if (data) {
       setCredits(data.credits || 0);
-    }
-  };
-
-  const fetchServicePricing = async () => {
-    const { data } = await supabase
-      .from('service_pricing')
-      .select('*');
-
-    if (data) {
-      const pricing = data.reduce((acc, item) => {
-        acc[item.service_type] = item.credits_cost;
-        return acc;
-      }, {} as any);
-      setServicePricing(pricing);
     }
   };
 
@@ -136,7 +121,7 @@ const Index = () => {
 
           {!user && (
             <div className="text-center">
-              <p className="text-muted-foreground mb-4">Sign in to get started with 15 free credits</p>
+              <p className="text-muted-foreground mb-4">Sign in to get started with 100 free credits</p>
               <Button onClick={() => navigate('/auth')} size="lg">
                 Sign In to Continue
               </Button>
