@@ -7,6 +7,13 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import StarField from '@/components/StarField';
 import { Mail, Check, Zap, Lock, Video, Sparkles, Shield, ArrowRight } from 'lucide-react';
+import { z } from 'zod';
+
+const passwordSchema = z.string()
+  .min(8, 'Password must be at least 8 characters')
+  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+  .regex(/[0-9]/, 'Password must contain at least one number');
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -31,6 +38,14 @@ const Auth = () => {
     setLoading(true);
 
     try {
+      // Validate password strength for signup
+      if (!isLogin) {
+        const validation = passwordSchema.safeParse(password);
+        if (!validation.success) {
+          throw new Error(validation.error.errors[0].message);
+        }
+      }
+
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -275,9 +290,14 @@ const Auth = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      minLength={6}
+                      minLength={8}
                       className="h-12 bg-background/50 border-border/50 focus:border-primary transition-colors"
                     />
+                    {!isLogin && password.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Password must be 8+ characters with uppercase, lowercase, and numbers
+                      </p>
+                    )}
                   </div>
                   <Button 
                     type="submit" 
