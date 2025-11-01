@@ -8,55 +8,47 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Premium color palette - deep, sophisticated */
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    /* Cool, soft light theme - subtle blue-tinted off-whites */
+    --background: 230 40% 98%;
+    --foreground: 222 47% 11%;
 
-    --card: 240 10% 5%;
-    --card-foreground: 0 0% 98%;
+    --card: 228 30% 99%;
+    --card-foreground: 222 47% 11%;
 
-    --popover: 240 10% 5%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 228 30% 99%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 263 70% 65%;
+    --primary: 221 80% 56%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 5% 12%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 220 18% 94%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 240 5% 15%;
-    --muted-foreground: 240 5% 64%;
+    --muted: 220 16% 96%;
+    --muted-foreground: 215 16% 47%;
 
-    --accent: 263 50% 20%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 225 30% 97%;
+    --accent-foreground: 222 47% 11%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 5% 20%;
-    --input: 240 5% 18%;
-    --ring: 263 70% 65%;
+    --border: 220 22% 90%;
+    --input: 220 22% 90%;
+    --ring: 221 80% 56%;
 
     --radius: 0.75rem;
 
-    /* Premium glass effects */
-    --glass-bg: 240 10% 5% / 0.6;
-    --glass-border: 240 10% 25% / 0.2;
+    /* Glass morphism effects - cool soft */
+    --glass-bg: 230 25% 98% / 0.7;
+    --glass-border: 220 22% 88% / 0.4;
 
-    /* Luxury gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(263 70% 65%), hsl(280 80% 70%));
-    --gradient-accent: linear-gradient(135deg, hsl(240 10% 8%), hsl(263 50% 15%));
-    --gradient-hero: radial-gradient(ellipse at top, hsl(263 70% 20% / 0.3), transparent 50%), 
-                     radial-gradient(ellipse at bottom, hsl(280 80% 25% / 0.2), transparent 50%),
-                     hsl(240 10% 3.9%);
-    --gradient-shimmer: linear-gradient(90deg, transparent, hsl(263 70% 65% / 0.1), transparent);
-
-    /* Premium shadows */
-    --shadow-premium: 0 20px 60px -15px hsl(263 70% 20% / 0.5);
-    --shadow-glow: 0 0 40px hsl(263 70% 65% / 0.2);
+    /* Gradients - delicate and professional */
+    --gradient-primary: linear-gradient(135deg, hsl(221 80% 56%), hsl(250 90% 66%));
+    --gradient-hero: linear-gradient(180deg, hsl(230 40% 99%), hsl(220 18% 96%));
 
     /* Animations */
-    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
@@ -69,18 +61,12 @@ All colors MUST be HSL.
     @apply bg-background text-foreground overflow-x-hidden;
   }
 
-  /* Premium glass card effect */
+  /* Glass card effect - light theme */
   .glass-card {
     background: hsla(var(--glass-bg));
-    backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(20px);
     border: 1px solid hsla(var(--glass-border));
-    box-shadow: var(--shadow-premium);
-  }
-
-  .premium-card {
-    background: linear-gradient(135deg, hsl(240 10% 6%), hsl(240 10% 4%));
-    border: 1px solid hsl(240 10% 20%);
-    box-shadow: var(--shadow-premium), inset 0 1px 0 hsl(240 10% 25% / 0.1);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   }
 
   /* Animated starfield background */
@@ -114,63 +100,24 @@ All colors MUST be HSL.
     position: relative;
   }
 
-  /* Upload box styles - premium */
+  /* Upload box styles - light theme */
   .upload-box {
     @apply glass-card rounded-2xl p-8 transition-all duration-300;
   }
 
   .upload-box:hover {
-    border-color: hsl(var(--primary) / 0.4);
-    box-shadow: var(--shadow-glow), var(--shadow-premium);
+    border-color: hsl(var(--primary) / 0.5);
+    box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.1), 0 4px 6px -2px rgba(59, 130, 246, 0.05);
   }
 
-  /* Premium button variants */
+  /* Custom button variants - light theme */
   .btn-hero {
     background: var(--gradient-primary);
     @apply text-white font-semibold rounded-full px-8 py-3 transition-all duration-300;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .btn-hero::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: var(--gradient-shimmer);
-    transition: left 0.5s ease;
-  }
-
-  .btn-hero:hover::before {
-    left: 100%;
   }
 
   .btn-hero:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-glow), 0 20px 40px -10px hsl(263 70% 30% / 0.4);
-  }
-
-  /* Shimmer animation */
-  @keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-  }
-
-  .shimmer {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .shimmer::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--gradient-shimmer);
-    animation: shimmer 3s infinite;
+    transform: scale(1.05);
+    box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.2), 0 10px 10px -5px rgba(59, 130, 246, 0.1);
   }
 }
