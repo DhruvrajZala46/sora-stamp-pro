@@ -17,12 +17,15 @@ serve(async (req) => {
   }
 
   try {
-    const POLAR_ACCESS_TOKEN = Deno.env.get('POLAR_ACCESS_TOKEN');
+    const POLAR_ENVIRONMENT = Deno.env.get('POLAR_ENVIRONMENT') || 'production';
+    const POLAR_ACCESS_TOKEN = (POLAR_ENVIRONMENT === 'sandbox')
+      ? (Deno.env.get('POLAR_SANDBOX_ACCESS_TOKEN') || Deno.env.get('POLAR_ACCESS_TOKEN'))
+      : Deno.env.get('POLAR_ACCESS_TOKEN');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!POLAR_ACCESS_TOKEN) {
-      throw new Error('POLAR_ACCESS_TOKEN not configured');
+      throw new Error(`Polar access token not configured for environment: ${POLAR_ENVIRONMENT}`);
     }
 
     const supabaseAdmin = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
