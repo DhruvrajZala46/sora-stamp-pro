@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import StarField from '@/components/StarField';
-import { Mail } from 'lucide-react';
+import { Mail, Check, Zap, Lock, Video } from 'lucide-react';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -83,125 +83,198 @@ const Auth = () => {
   return (
     <div className="min-h-screen sora-hero flex items-center justify-center px-4 sm:px-6 py-8">
       <StarField />
-      <div className="relative z-10 w-full max-w-md">
-        <div className="glass-card rounded-2xl p-6 sm:p-8 space-y-6">
-          {emailSent ? (
-            <div className="text-center space-y-4">
-              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                <Mail className="w-8 h-8 text-primary" />
+      <div className="relative z-10 w-full max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-8 items-center">
+          {/* Left Side - Marketing Content */}
+          <div className="hidden md:block space-y-6 animate-fade-in">
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
+                <Zap className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold text-primary">100 Free Credits on Signup</span>
               </div>
-              <h1 className="text-3xl font-bold">Check Your Email</h1>
-              <p className="text-muted-foreground">
-                We've sent a verification link to <span className="font-medium text-foreground">{email}</span>
+              <h1 className="text-4xl lg:text-5xl font-bold leading-tight">
+                Professional Video Watermarking Made Simple
+              </h1>
+              <p className="text-xl text-muted-foreground">
+                Join thousands of creators using AI-powered watermarking for their videos
               </p>
-              <p className="text-sm text-muted-foreground">
-                Click the link in the email to verify your account and get started with SoraStamp.
-              </p>
-              <Button 
-                onClick={() => {
-                  setEmailSent(false);
-                  setEmail('');
-                  setPassword('');
-                }}
-                variant="outline"
-                className="w-full"
-              >
-                Back to Sign In
-              </Button>
             </div>
-          ) : (
-            <>
-              <div className="text-center space-y-2">
-                <h1 className="text-2xl sm:text-3xl font-bold">
-                  {isLogin ? 'Welcome Back' : 'Create Account'}
-                </h1>
-                <p className="text-sm sm:text-base text-muted-foreground">
-                  {isLogin ? 'Sign in to start watermarking' : 'Get started with 3 free videos'}
+
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 p-4 rounded-lg bg-background/50 backdrop-blur-sm border border-primary/10">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Check className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-1">Lightning Fast Processing</h3>
+                  <p className="text-sm text-muted-foreground">Add or remove watermarks in seconds with AI technology</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-4 rounded-lg bg-background/50 backdrop-blur-sm border border-primary/10">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Video className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-1">Professional Quality</h3>
+                  <p className="text-sm text-muted-foreground">High-quality output with seamless watermark integration</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-4 rounded-lg bg-background/50 backdrop-blur-sm border border-primary/10">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Lock className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-1">100% Secure</h3>
+                  <p className="text-sm text-muted-foreground">Your videos are encrypted and automatically deleted after processing</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Check className="w-4 h-4 text-primary" />
+              <span>No credit card required</span>
+            </div>
+          </div>
+
+          {/* Right Side - Auth Form */}
+          <div className="glass-card rounded-2xl p-6 sm:p-8 space-y-6 animate-scale-in">
+            {emailSent ? (
+              <div className="text-center space-y-4">
+                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Mail className="w-8 h-8 text-primary" />
+                </div>
+                <h2 className="text-3xl font-bold">Check Your Email</h2>
+                <p className="text-muted-foreground">
+                  We've sent a verification link to <span className="font-medium text-foreground">{email}</span>
                 </p>
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={handleGoogleSignIn}
-              >
-                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                  <path
-                    fill="currentColor"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  />
-                </svg>
-                Continue with Google
-              </Button>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">Or continue with email</span>
-                </div>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="bg-background/50"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    className="bg-background/50"
-                  />
-                </div>
-                <Button type="submit" className="w-full btn-hero" disabled={loading}>
-                  {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Sign Up'}
-                </Button>
-              </form>
-
-              <div className="text-center text-sm text-muted-foreground">
-                {isLogin ? "Don't have an account? " : 'Already have an account? '}
-                <button
-                  type="button"
+                <p className="text-sm text-muted-foreground">
+                  Click the link in the email to verify your account and claim your 100 free credits!
+                </p>
+                <Button 
                   onClick={() => {
-                    setIsLogin(!isLogin);
                     setEmailSent(false);
+                    setEmail('');
+                    setPassword('');
                   }}
-                  className="text-primary hover:underline font-medium"
+                  variant="outline"
+                  className="w-full"
                 >
-                  {isLogin ? 'Sign up' : 'Sign in'}
-                </button>
+                  Back to Sign In
+                </Button>
               </div>
-            </>
-          )}
+            ) : (
+              <>
+                <div className="text-center space-y-2">
+                  <h2 className="text-2xl sm:text-3xl font-bold">
+                    {isLogin ? 'Welcome Back' : '🎉 Get 100 Free Credits'}
+                  </h2>
+                  <p className="text-sm sm:text-base text-muted-foreground">
+                    {isLogin ? 'Sign in to continue watermarking' : 'Create your free account — no credit card required'}
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-12 text-base font-medium"
+                  onClick={handleGoogleSignIn}
+                >
+                  <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                    <path
+                      fill="currentColor"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    />
+                  </svg>
+                  Continue with Google — Fast & Secure
+                </Button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">Or continue with email</span>
+                  </div>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="bg-background/50 h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="bg-background/50 h-11"
+                    />
+                  </div>
+                  <Button type="submit" className="w-full btn-hero h-12 text-base font-semibold" disabled={loading}>
+                    {loading ? 'Loading...' : isLogin ? 'Sign In' : '🚀 Create Free Account (100 Credits Included)'}
+                  </Button>
+                </form>
+
+                {!isLogin && (
+                  <div className="md:hidden space-y-3 pt-2">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                      <span>100 free credits instantly</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                      <span>No credit card required</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                      <span>Secure & encrypted processing</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="text-center text-sm text-muted-foreground">
+                  {isLogin ? "Don't have an account? " : 'Already have an account? '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsLogin(!isLogin);
+                      setEmailSent(false);
+                    }}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    {isLogin ? 'Sign up for free' : 'Sign in'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
