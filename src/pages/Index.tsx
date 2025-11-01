@@ -40,15 +40,19 @@ const Index = () => {
   };
 
   const fetchCredits = async (userId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('user_subscriptions')
       .select('credits')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
-    if (data) {
-      setCredits(data.credits || 0);
+    if (error) {
+      console.error('Error fetching credits:', error);
+      setCredits(0);
+      return;
     }
+
+    setCredits(data?.credits || 0);
   };
 
   const handleServiceSelect = (serviceType: 'add' | 'remove') => {
