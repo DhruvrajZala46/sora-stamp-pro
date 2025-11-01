@@ -149,33 +149,24 @@ export type Database = {
           credits: number
           has_received_welcome_credits: boolean | null
           id: string
-          max_file_size_mb: number | null
-          plan: string | null
           updated_at: string
           user_id: string
-          videos_remaining: number | null
         }
         Insert: {
           created_at?: string
           credits?: number
           has_received_welcome_credits?: boolean | null
           id?: string
-          max_file_size_mb?: number | null
-          plan?: string | null
           updated_at?: string
           user_id: string
-          videos_remaining?: number | null
         }
         Update: {
           created_at?: string
           credits?: number
           has_received_welcome_credits?: boolean | null
           id?: string
-          max_file_size_mb?: number | null
-          plan?: string | null
           updated_at?: string
           user_id?: string
-          videos_remaining?: number | null
         }
         Relationships: []
       }
@@ -272,27 +263,9 @@ export type Database = {
         Args: { p_credits: number; p_description: string; p_user_id: string }
         Returns: boolean
       }
-      decrement_videos_remaining: {
-        Args: { p_user_id: string }
-        Returns: boolean
-      }
       deduct_credits: {
         Args: { p_credits: number; p_description: string; p_user_id: string }
         Returns: boolean
-      }
-      get_user_file_size_limit: { Args: { p_user_id: string }; Returns: number }
-      update_subscription_from_webhook: {
-        Args: {
-          p_event_type: string
-          p_max_file_size_mb: number
-          p_plan: string
-          p_product_id: string
-          p_subscription_id: string
-          p_user_id: string
-          p_videos_remaining: number
-          p_webhook_id: string
-        }
-        Returns: Json
       }
     }
     Enums: {
